@@ -100,7 +100,6 @@ public class FutureSecurityConverterDeprecated extends FinancialSecurityVisitorA
         return new EquityFutureDefinition(expiry, expiry, referencePrice, security.getCurrency(), security.getUnitAmount());
       }
 
-
       @Override
       public InstrumentDefinitionWithData<?, Double> visitIndexFutureSecurity(final IndexFutureSecurity security) {
         final ZonedDateTime expiry = security.getExpiry().getExpiry();

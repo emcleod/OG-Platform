@@ -1682,7 +1682,12 @@ public class FixedIncomeConverterDataProvider {
   private ExternalIdBundle getIndexIborIdBundle(final ExternalId indexId) {
     final Security sec = _securitySource.getSingle(indexId.toBundle());
     if (sec == null) {
-      throw new OpenGammaRuntimeException("Ibor index with id " + indexId.toBundle() + " is null");
+      s_logger.info("Ibor index security with id {} is null; falling back to ConventionBundleMaster", indexId.toBundle());
+      ConventionBundle convention = _conventionSource.getConventionBundle(indexId);
+      if (convention == null) {
+        throw new OpenGammaRuntimeException("Could not get convention bundle for " + indexId); 
+      }
+      return convention.getIdentifiers();
     }
     if (!(sec instanceof com.opengamma.financial.security.index.IborIndex)) {
       throw new OpenGammaRuntimeException("Security with id " + indexId.toBundle() + " is not an IborIndex");

@@ -39,8 +39,6 @@ public class InterestRateFutureSecurityConverterDeprecated extends FinancialSecu
   /** The region source */
   private final RegionSource _regionSource;
 
-  /** The version/correction timestamp */
-
   /**
    * @param holidaySource The holiday source, not null
    * @param conventionSource The convention source, not null

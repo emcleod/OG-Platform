@@ -15,6 +15,7 @@ import org.threeten.bp.Period;
 import org.threeten.bp.ZonedDateTime;
 
 import com.opengamma.OpenGammaRuntimeException;
+import com.opengamma.analytics.financial.instrument.InstrumentDefinition;
 import com.opengamma.analytics.financial.instrument.InstrumentDefinitionWithData;
 import com.opengamma.analytics.financial.interestrate.InstrumentDerivative;
 import com.opengamma.analytics.financial.interestrate.InstrumentDerivativeVisitor;
@@ -36,13 +37,17 @@ import com.opengamma.engine.value.ValueProperties;
 import com.opengamma.engine.value.ValueRequirement;
 import com.opengamma.engine.value.ValueSpecification;
 import com.opengamma.financial.OpenGammaCompilationContext;
+import com.opengamma.financial.analytics.conversion.FixedIncomeConverterDataProvider;
 import com.opengamma.financial.analytics.conversion.FutureTradeConverterDeprecated;
+import com.opengamma.financial.analytics.conversion.InterestRateFutureSecurityConverterDeprecated;
+import com.opengamma.financial.analytics.conversion.InterestRateFutureTradeConverterDeprecated;
 import com.opengamma.financial.analytics.timeseries.DateConstraint;
 import com.opengamma.financial.analytics.timeseries.HistoricalTimeSeriesBundle;
 import com.opengamma.financial.analytics.timeseries.HistoricalTimeSeriesFunctionUtils;
 import com.opengamma.financial.convention.ConventionBundleSource;
 import com.opengamma.financial.security.FinancialSecurityUtils;
 import com.opengamma.financial.security.future.FutureSecurity;
+import com.opengamma.financial.security.future.InterestRateFutureSecurity;
 import com.opengamma.id.ExternalId;
 import com.opengamma.id.ExternalIdBundle;
 import com.opengamma.master.historicaltimeseries.HistoricalTimeSeriesResolutionResult;
@@ -65,12 +70,16 @@ public abstract class FuturesFunction<T> extends AbstractFunction.NonCompiledInv
   private final InstrumentDerivativeVisitor<SimpleFutureDataBundle, T> _calculator;
   /** The trade converter */
   private FutureTradeConverterDeprecated _tradeConverter;
+  /** The interest rate future security trade converter */
+  private InterestRateFutureTradeConverterDeprecated _irFutureConverter;
   /** The field name of the historical time series for price, e.g. "PX_LAST", "Close" */
   private final String _closingPriceField;
   /** The field name of the historical time series for cost of carry e.g. "COST_OF_CARRY" */
   private final String _costOfCarryField;
   /** key defining how the time series resolution is to occur e.g. "DEFAULT_TSS_CONFIG"*/
   private final String _resolutionKey;
+
+  private FixedIncomeConverterDataProvider _dataConverter;
 
   /**
    * @param valueRequirementName String describes the value requested
@@ -99,7 +108,11 @@ public abstract class FuturesFunction<T> extends AbstractFunction.NonCompiledInv
     final RegionSource regionSource = OpenGammaCompilationContext.getRegionSource(context);
     final ConventionBundleSource conventionSource = OpenGammaCompilationContext.getConventionBundleSource(context);
     final SecuritySource securitySource = OpenGammaCompilationContext.getSecuritySource(context);
+    final HistoricalTimeSeriesResolver timeSeriesResolver = OpenGammaCompilationContext.getHistoricalTimeSeriesResolver(context);
     _tradeConverter = new FutureTradeConverterDeprecated(securitySource, holidaySource, conventionSource, regionSource);
+    final InterestRateFutureSecurityConverterDeprecated irSecurityConverter = new InterestRateFutureSecurityConverterDeprecated(holidaySource, conventionSource, regionSource);
+    _irFutureConverter = new InterestRateFutureTradeConverterDeprecated(irSecurityConverter);
+    _dataConverter = new FixedIncomeConverterDataProvider(conventionSource, securitySource, timeSeriesResolver);
   }
 
   @Override
@@ -124,16 +137,23 @@ public abstract class FuturesFunction<T> extends AbstractFunction.NonCompiledInv
     }
     // Build the analytic's version of the security - the derivative
     final ZonedDateTime valuationTime = ZonedDateTime.now(executionContext.getValuationClock());
-    final InstrumentDefinitionWithData<?, Double> tradeDefinition = _tradeConverter.convert(trade);
-    double referencePrice = lastMarginPrice; // TODO: Decide if this logic should be here or in toDerivative.
-    if (trade.getTradeDate() != null) {
-      if (trade.getTradeDate().isEqual(valuationTime.toLocalDate())) { // Transaction is on pricing date.if (trade.getPremium() != null) {
-        if (trade.getPremium() != null) {
-          referencePrice = trade.getPremium(); // TODO: The trade price is stored in the trade premium. This has to be corrected.
+    final InstrumentDerivative derivative;
+    if (security instanceof InterestRateFutureSecurity) {
+      final InstrumentDefinition<InstrumentDerivative> irFutureDefinition = _irFutureConverter.convert(trade);
+      final HistoricalTimeSeriesBundle timeSeries = HistoricalTimeSeriesFunctionUtils.getHistoricalTimeSeriesInputs(executionContext, inputs);
+      derivative = _dataConverter.convert(trade.getSecurity(), irFutureDefinition, valuationTime, new String[] {"", "" }, timeSeries);
+    } else {
+      final InstrumentDefinitionWithData<?, Double> tradeDefinition = _tradeConverter.convert(trade);
+      double referencePrice = lastMarginPrice; // TODO: Decide if this logic should be here or in toDerivative.
+      if (trade.getTradeDate() != null) {
+        if (trade.getTradeDate().isEqual(valuationTime.toLocalDate())) { // Transaction is on pricing date.if (trade.getPremium() != null) {
+          if (trade.getPremium() != null) {
+            referencePrice = trade.getPremium(); // TODO: The trade price is stored in the trade premium. This has to be corrected.
+          }
         }
       }
+      derivative = tradeDefinition.toDerivative(valuationTime, referencePrice);
     }
-    final InstrumentDerivative derivative = tradeDefinition.toDerivative(valuationTime, referencePrice);
     // Build the DataBundle it requires
     final ValueRequirement desiredValue = desiredValues.iterator().next();
     final SimpleFutureDataBundle dataBundle = getFutureDataBundle(security, inputs, timeSeriesBundle, desiredValue);
@@ -255,6 +275,7 @@ public abstract class FuturesFunction<T> extends AbstractFunction.NonCompiledInv
     return HistoricalTimeSeriesFunctionUtils.createHTSRequirement(timeSeries, MarketDataRequirementNames.MARKET_VALUE,
         DateConstraint.VALUATION_TIME.minus(Period.ofDays(7)), true, DateConstraint.VALUATION_TIME, true);
   }
+
   /**
    * FuturesFunction acts upon ComputationTargetType.TRADE, but many of the calculators used in the execute() method really operate
    * as if they acted upon ComputationTargetType.SECUIRITY. 
@@ -263,7 +284,7 @@ public abstract class FuturesFunction<T> extends AbstractFunction.NonCompiledInv
    * @param value Computed Result to be scaled
    * @return Scaled result
    */
-  protected T applyTradeScaling(final Trade trade, T value) {
+  protected T applyTradeScaling(final Trade trade, final T value) {
     return value;
   }
 
