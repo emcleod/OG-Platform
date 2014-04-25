@@ -27,6 +27,7 @@ import com.opengamma.util.money.Currency;
 
 /**
  * Converts interest rate future securities into the definition form used by the analytics library
+ * 
  * @deprecated Use the converter that does not reference a {@link ConventionBundleSource}
  */
 @Deprecated
@@ -74,6 +75,7 @@ public class InterestRateFutureSecurityConverterDeprecated extends FinancialSecu
 
   /**
    * Returns the conventional accrual factor for a given period. For 3 months, the factor is 0.25; for 1 month, the factor is 1/12.
+   * 
    * @param period The period.
    * @return The accrual factor.
    */

@@ -16,54 +16,34 @@ import com.opengamma.analytics.financial.equity.future.definition.EquityIndexDiv
 import com.opengamma.analytics.financial.equity.future.definition.IndexFutureDefinition;
 import com.opengamma.analytics.financial.instrument.InstrumentDefinitionVisitorAdapter;
 import com.opengamma.analytics.financial.instrument.InstrumentDefinitionWithData;
-import com.opengamma.analytics.financial.instrument.future.BondFutureDefinition;
-import com.opengamma.analytics.financial.instrument.future.InterestRateFutureSecurityDefinition;
-import com.opengamma.analytics.financial.instrument.future.InterestRateFutureTransactionDefinition;
-import com.opengamma.analytics.financial.instrument.future.SwapFuturesPriceDeliverableSecurityDefinition;
-import com.opengamma.analytics.financial.instrument.future.SwapFuturesPriceDeliverableTransactionDefinition;
-import com.opengamma.core.holiday.HolidaySource;
 import com.opengamma.core.position.Trade;
-import com.opengamma.core.region.RegionSource;
 import com.opengamma.core.security.Security;
-import com.opengamma.core.security.SecuritySource;
-import com.opengamma.financial.convention.ConventionBundleSource;
-import com.opengamma.financial.convention.ConventionSource;
 import com.opengamma.financial.security.future.FutureSecurity;
 import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.time.DateUtils;
 
 /**
- * Visits a Trade containing a {@link FutureSecurity} (OG-Financial)
+ * Visits a {@link Trade} containing a {@link FutureSecurity} (OG-Financial)
  * Converts it to an {@link InstrumentDefinitionWithData} (OG-Analytics)
  */
-public class FutureTradeConverter {
+public class FutureTradeConverter implements TradeConverter {
   /**
    * The security converter (to convert the trade underlying).
    */
   private final FutureSecurityConverter _futureSecurityConverter;
 
   /**
-   * @param securitySource The security source.
-   * @param holidaySource The holiday source.
-   * @param conventionSource The convention source.
-   * @param conventionBundleSource The convention bundle source.
-   * @param regionSource The region source.
    */
-  public FutureTradeConverter(final SecuritySource securitySource, final HolidaySource holidaySource, final ConventionSource conventionSource,
-      final ConventionBundleSource conventionBundleSource, final RegionSource regionSource) {
-    final InterestRateFutureSecurityConverter irFutureConverter = new InterestRateFutureSecurityConverter(holidaySource, conventionSource, regionSource);
-    final SwapSecurityConverter swapConverter = new SwapSecurityConverter(holidaySource, conventionSource, regionSource);
-    final DeliverableSwapFutureSecurityConverter dsfConverter = new DeliverableSwapFutureSecurityConverter(securitySource, swapConverter);
-    final BondSecurityConverter bondConverter = new BondSecurityConverter(holidaySource, conventionBundleSource, regionSource);
-    final BondFutureSecurityConverter bondFutureConverter = new BondFutureSecurityConverter(securitySource, bondConverter);
-    _futureSecurityConverter = new FutureSecurityConverter(irFutureConverter, bondFutureConverter, dsfConverter);
+  public FutureTradeConverter() {
+    _futureSecurityConverter = new FutureSecurityConverter();
   }
 
   /**
-   * Converts a futures Trade to a Definition
+   * Converts a futures trade to a definition
    * @param trade The trade
-   * @return EquityFutureDefinition
+   * @return A future definition that can be used in the analytics library
    */
+  @Override
   public InstrumentDefinitionWithData<?, Double> convert(final Trade trade) {
     ArgumentChecker.notNull(trade, "trade");
     final Security security = trade.getSecurity();
@@ -85,10 +65,11 @@ public class FutureTradeConverter {
   }
 
   /**
-   * Creates the OG-Analytics tradeDefinition from the OG-Analytics securityDefinition and the trade details (price and date).
+   * Creates an OG-Analytics trade definition from the OG-Analytics security definition and the trade details (price and date).
    * @param securityDefinition The security definition (OG-Analytics object).
    * @param tradePrice The trade price.
    * @param tradeDate The trade date.
+   * @param quantity The quantity
    * @return The tradeDefinition.
    */
   private static InstrumentDefinitionWithData<?, Double> securityToTrade(final InstrumentDefinitionWithData<?, Double> securityDefinition, final Double tradePrice,
@@ -97,57 +78,40 @@ public class FutureTradeConverter {
     final InstrumentDefinitionVisitorAdapter<InstrumentDefinitionWithData<?, Double>, InstrumentDefinitionWithData<?, Double>> visitor =
         new InstrumentDefinitionVisitorAdapter<InstrumentDefinitionWithData<?, Double>, InstrumentDefinitionWithData<?, Double>>() {
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitAgricultureFutureDefinition(final AgricultureFutureDefinition futures) {
-            return new AgricultureFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
-                1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
-          }
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitAgricultureFutureDefinition(final AgricultureFutureDefinition futures) {
+        return new AgricultureFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
+            1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
+      }
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitEnergyFutureDefinition(final EnergyFutureDefinition futures) {
-            return new EnergyFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
-                1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
-          }
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitEnergyFutureDefinition(final EnergyFutureDefinition futures) {
+        return new EnergyFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
+            1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
+      }
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitMetalFutureDefinition(final MetalFutureDefinition futures) {
-            return new MetalFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
-                1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
-          }
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitMetalFutureDefinition(final MetalFutureDefinition futures) {
+        return new MetalFutureDefinition(futures.getExpiryDate(), futures.getUnderlying(), futures.getUnitAmount(), null, null,
+            1.0, futures.getUnitName(), futures.getSettlementType(), tradePrice, futures.getCurrency(), futures.getSettlementDate());
+      }
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitEquityIndexDividendFutureDefinition(final EquityIndexDividendFutureDefinition futures) {
-            return new EquityFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount());
-          }
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitEquityIndexDividendFutureDefinition(final EquityIndexDividendFutureDefinition futures) {
+        return new EquityFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount());
+      }
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitEquityFutureDefinition(final EquityFutureDefinition futures) {
-            return new EquityFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount());
-          }
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitEquityFutureDefinition(final EquityFutureDefinition futures) {
+        return new EquityFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount());
+      }
 
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitBondFutureDefinition(final BondFutureDefinition futures) {
-            return futures;
-          }
-
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitInterestRateFutureSecurityDefinition(final InterestRateFutureSecurityDefinition futures) {
-            return new InterestRateFutureTransactionDefinition(futures, tradeDate, tradePrice, quantity);
-          }
-
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitDeliverableSwapFuturesSecurityDefinition(final SwapFuturesPriceDeliverableSecurityDefinition future) {
-            return new SwapFuturesPriceDeliverableTransactionDefinition(future, tradeDate, tradePrice, quantity);
-          }
-
-          @Override
-          public InstrumentDefinitionWithData<?, Double> visitIndexFutureDefinition(final IndexFutureDefinition futures) {
-            return new IndexFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount(), futures.getUnderlying());
-          }
-
-        };
-
+      @Override
+      public InstrumentDefinitionWithData<?, Double> visitIndexFutureDefinition(final IndexFutureDefinition futures) {
+        return new IndexFutureDefinition(futures.getExpiryDate(), futures.getSettlementDate(), tradePrice, futures.getCurrency(), futures.getUnitAmount(),
+            futures.getUnderlying());
+      }
+    };
     return securityDefinition.accept(visitor);
   }
-
 }
