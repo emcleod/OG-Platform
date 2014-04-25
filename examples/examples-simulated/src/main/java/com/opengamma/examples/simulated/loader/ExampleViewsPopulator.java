@@ -72,6 +72,7 @@ import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.MUL
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.SWAPTION_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.US_GOVERNMENT_BOND_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.VANILLA_FX_OPTION_PORTFOLIO_NAME;
+import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.BLACK_METHOD;
 import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.HISTORICAL_REALIZED_VARIANCE;
 import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.PROPERTY_REALIZED_VARIANCE_METHOD;
 import static com.opengamma.financial.analytics.model.InterpolatedDataProperties.LEFT_X_EXTRAPOLATOR_NAME;
@@ -109,7 +110,6 @@ import com.opengamma.engine.view.ViewDefinition;
 import com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues;
 import com.opengamma.financial.analytics.model.InstrumentTypeProperties;
 import com.opengamma.financial.analytics.model.bond.BondFunction;
-import com.opengamma.financial.analytics.model.curve.interestrate.MarketInstrumentImpliedYieldCurveFunction;
 import com.opengamma.financial.analytics.model.sabrcube.SABRFunction;
 import com.opengamma.financial.currency.CurrencyConversionFunction;
 import com.opengamma.financial.security.bond.BondSecurity;
@@ -709,7 +709,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     viewDefinition.setMinDeltaCalculationPeriod(500L);
     viewDefinition.setMinFullCalculationPeriod(500L);
     final ViewCalculationConfiguration defaultCalcConfig = new ViewCalculationConfiguration(viewDefinition, DEFAULT_CALC_CONFIG);
-    final ValueProperties constraints = ValueProperties.with(ValuePropertyNames.CURVE_CALCULATION_METHOD, MarketInstrumentImpliedYieldCurveFunction.PAR_RATE_STRING).get();
+    final ValueProperties constraints = ValueProperties.with(ValuePropertyNames.CALCULATION_METHOD, BLACK_METHOD).get();
     defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VALUE_DELTA, constraints);
     defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, VALUE_DELTA, constraints);
     defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, DELTA, constraints);
