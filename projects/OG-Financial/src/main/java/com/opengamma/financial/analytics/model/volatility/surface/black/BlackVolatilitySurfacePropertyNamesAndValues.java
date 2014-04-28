@@ -5,11 +5,13 @@
  */
 package com.opengamma.financial.analytics.model.volatility.surface.black;
 
+import com.opengamma.engine.value.ValuePropertyNames;
+
 /**
  *
  */
 public class BlackVolatilitySurfacePropertyNamesAndValues {
-  
+
   /** Property name for {@link ValuePropertyNames#SURFACE_CALCULATION_METHOD} 
    * indicating that an interpolated Black lognormal volatility surface was used
    */
@@ -78,7 +80,7 @@ public class BlackVolatilitySurfacePropertyNamesAndValues {
   public static final String EXCEPTION_SPLINE_EXTRAPOLATOR_FAILURE = "Exception";
   /**  Selection *Flat* means that volatilities in the exterior will equal the vol at the nearest boundary*/
   public static final String FLAT_SPLINE_EXTRAPOLATOR_FAILURE = "Flat";
-  
+
   // Properties for mixed log normal interpolation
   /** Property name for the weighting function to be used in mixed log-normal interpolation */
   public static final String PROPERTY_MIXED_LOG_NORMAL_WEIGHTING_FUNCTION = "MixedLogNormalWeightingFunction";
@@ -92,6 +94,5 @@ public class BlackVolatilitySurfacePropertyNamesAndValues {
   public static final String PROPERTY_SABR_MODEL = "SABRModel";
   /** Property name for the weighting function to be used in SABR interpolation */
   public static final String PROPERTY_SABR_WEIGHTING_FUNCTION = "SABRWeightingFunction";
-
 
 }
