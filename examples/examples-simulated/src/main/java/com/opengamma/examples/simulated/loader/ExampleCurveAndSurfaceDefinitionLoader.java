@@ -5,10 +5,14 @@
  */
 package com.opengamma.examples.simulated.loader;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.opengamma.component.tool.AbstractTool;
 import com.opengamma.examples.simulated.curve.ExampleFXForwardCurveConfigPopulator;
 import com.opengamma.examples.simulated.volatility.cube.ExampleSwaptionVolatilityCubeConfigPopulator;
 import com.opengamma.examples.simulated.volatility.surface.ExampleATMSwaptionVolatilitySurfaceConfigPopulator;
+import com.opengamma.examples.simulated.volatility.surface.ExampleCallPutVolatilitySurfaceConfigPopulator;
 import com.opengamma.examples.simulated.volatility.surface.ExampleFXOptionVolatilitySurfaceConfigPopulator;
 import com.opengamma.examples.simulated.volatility.surface.ExampleForwardSwapSurfaceConfigPopulator;
 import com.opengamma.financial.analytics.ircurve.YieldCurveConfigPopulator;
@@ -41,6 +45,10 @@ public class ExampleCurveAndSurfaceDefinitionLoader extends AbstractTool<ToolCon
     ExampleFXForwardCurveConfigPopulator.populateCurveConfigMaster(configMaster, ExampleViewsPopulator.CURRENCY_PAIRS);
     ExampleSwaptionVolatilityCubeConfigPopulator.populateVolatilityCubeConfigMaster(configMaster, ExampleViewsPopulator.SWAPTION_CURRENCY_CONFIGS);
     ExampleForwardSwapSurfaceConfigPopulator.populateSurfaceConfigMaster(configMaster, ExampleViewsPopulator.SWAPTION_COUNTRY_CONFIGS);
+    final Map<String, String> equityOptions = new HashMap<>();
+    equityOptions.put("AAPL", "DEFAULT");
+    equityOptions.put("IBM", "DEFAULT");
+    ExampleCallPutVolatilitySurfaceConfigPopulator.populateSurfaceConfigMaster(configMaster, equityOptions);
   }
 
 }

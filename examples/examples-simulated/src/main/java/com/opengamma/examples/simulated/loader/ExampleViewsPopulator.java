@@ -72,6 +72,7 @@ import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.MUL
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.SWAPTION_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.US_GOVERNMENT_BOND_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.VANILLA_FX_OPTION_PORTFOLIO_NAME;
+import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.BAW_METHOD;
 import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.BLACK_METHOD;
 import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.HISTORICAL_REALIZED_VARIANCE;
 import static com.opengamma.financial.analytics.model.CalculationPropertyNamesAndValues.PROPERTY_REALIZED_VARIANCE_METHOD;
@@ -700,6 +701,13 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     return viewDefinition;
   }
 
+  /**
+   * Creates a view definition for equity options and equities that asks for the PV, value delta, 
+   * delta, gamma, theta, rho and vega using the Black method if appropriate.
+   * @param portfolioName The portfolio name
+   * @param viewName The view name
+   * @return The view definition
+   */
   private ViewDefinition getEquityOptionViewDefinition(final String portfolioName, final String viewName) {
     final UniqueId portfolioId = getPortfolioId(portfolioName).toLatest();
     final ViewDefinition viewDefinition = new ViewDefinition(viewName, portfolioId, UserPrincipal.getTestUser());
@@ -709,20 +717,30 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     viewDefinition.setMinDeltaCalculationPeriod(500L);
     viewDefinition.setMinFullCalculationPeriod(500L);
     final ViewCalculationConfiguration defaultCalcConfig = new ViewCalculationConfiguration(viewDefinition, DEFAULT_CALC_CONFIG);
-    final ValueProperties constraints = ValueProperties.with(ValuePropertyNames.CALCULATION_METHOD, BLACK_METHOD).get();
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VALUE_DELTA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, VALUE_DELTA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, DELTA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, DELTA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, GAMMA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, GAMMA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, THETA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, THETA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, RHO, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, RHO, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VEGA, constraints);
-    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, VEGA, constraints);
+    final ValueProperties equityConstraints = ValueProperties.none();
+    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, VALUE_DELTA, equityConstraints);
+    defaultCalcConfig.addPortfolioRequirement(EquitySecurity.SECURITY_TYPE, PRESENT_VALUE, equityConstraints);
     viewDefinition.addViewCalculationConfiguration(defaultCalcConfig);
+    final ViewCalculationConfiguration blackConfig = new ViewCalculationConfiguration(viewDefinition, "Black");
+    final ValueProperties blackConstraints = ValueProperties.with(CALCULATION_METHOD, BLACK_METHOD).get();
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VALUE_DELTA, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, PRESENT_VALUE, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, DELTA, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, GAMMA, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, THETA, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, RHO, blackConstraints);
+    blackConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VEGA, blackConstraints);
+    viewDefinition.addViewCalculationConfiguration(blackConfig);
+    final ViewCalculationConfiguration bawConfig = new ViewCalculationConfiguration(viewDefinition, "Barone-Adesi-Whaley");
+    final ValueProperties bawConstraints = ValueProperties.with(CALCULATION_METHOD, BAW_METHOD).get();
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VALUE_DELTA, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, PRESENT_VALUE, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, DELTA, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, GAMMA, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, THETA, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, RHO, bawConstraints);
+    bawConfig.addPortfolioRequirement(EquityOptionSecurity.SECURITY_TYPE, VEGA, bawConstraints);
+    viewDefinition.addViewCalculationConfiguration(bawConfig);
     return viewDefinition;
   }
 
