@@ -50,11 +50,11 @@ public class EquityForwardCurvePerTickerDefaults extends DefaultPropertyFunction
     ArgumentChecker.notNull(priority, "priority");
     ArgumentChecker.notNull(perEquityConfig, "per equity config");
     final int nPairs = perEquityConfig.length;
-    ArgumentChecker.isTrue(nPairs % 5 == 0, "Must have one curve config, discounting curve name and currency per equity");
+    ArgumentChecker.isTrue(nPairs % 5 == 0, "Must have one curve config, discounting curve name, currency and dividend type per equity");
     _priority = PriorityClass.valueOf(priority);
     _perEquityConfig = new HashMap<>();
     for (int i = 0; i < perEquityConfig.length; i += 5) {
-      final String[] config = new String[] {perEquityConfig[i + 1], perEquityConfig[i + 2], perEquityConfig[i + 3], perEquityConfig[i + 4]};
+      final String[] config = new String[] {perEquityConfig[i + 1], perEquityConfig[i + 2], perEquityConfig[i + 3], perEquityConfig[i + 4] };
       _perEquityConfig.put(perEquityConfig[i].toUpperCase(), config);
     }
   }
@@ -64,7 +64,7 @@ public class EquityForwardCurvePerTickerDefaults extends DefaultPropertyFunction
     if (!(target.getValue() instanceof ExternalIdentifiable)) {
       return false;
     }
-    ExternalId id = ((ExternalIdentifiable) target.getValue()).getExternalId();
+    final ExternalId id = ((ExternalIdentifiable) target.getValue()).getExternalId();
     final String ticker = EquitySecurityUtils.getIndexOrEquityName(id);
     if (ticker == null) {
       return false;

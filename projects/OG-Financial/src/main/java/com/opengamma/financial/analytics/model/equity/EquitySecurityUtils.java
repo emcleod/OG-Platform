@@ -57,7 +57,7 @@ public final class EquitySecurityUtils {
   public static String getIndexOrEquityNameFromUnderlying(final Security security) {
     return getIndexOrEquityNameFromUnderlying(security, false);
   }
-  
+
   /**
    * Gets the underlying index or equity name from a security. At the moment, only securities with a Bloomberg ticker or BUID (if the security is an equity index option) are handled. For a Bloomberg
    * ticker, the suffix is stripped (SPX Index -> SPX). For a BUID, the last three letters are assumed to be the name.

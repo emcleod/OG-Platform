@@ -17,7 +17,7 @@ public class EquityOptionSurfaceCalculationMethodPerEquityDefaults extends Equit
 
   /**
    * @param priority The priority class of {@link DefaultPropertyFunction} instances, allowing them to be ordered relative to each other, not null
-   * @param perEquityConfig Defaults values of curve configuration, discounting curve, surface name and interpolation method per equity, not null
+   * @param perEquityConfig Defaults value of surface calculation method per equity, not null
    */
   public EquityOptionSurfaceCalculationMethodPerEquityDefaults(final String priority, final String... perEquityConfig) {
     super(priority, perEquityConfig);

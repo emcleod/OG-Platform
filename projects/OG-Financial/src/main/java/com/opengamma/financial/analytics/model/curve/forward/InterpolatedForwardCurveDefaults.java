@@ -8,6 +8,9 @@ package com.opengamma.financial.analytics.model.curve.forward;
 import java.util.Collections;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.opengamma.engine.ComputationTarget;
 import com.opengamma.engine.function.FunctionCompilationContext;
 import com.opengamma.engine.target.ComputationTargetType;
@@ -17,14 +20,23 @@ import com.opengamma.financial.property.DefaultPropertyFunction;
 import com.opengamma.util.ArgumentChecker;
 
 /**
- *
+ * Provides default interpolator names for <b>all</b> forward curves, regardless of underlying instrument type.
  */
 public class InterpolatedForwardCurveDefaults extends DefaultPropertyFunction {
-
+  /** The logger */
+  private static final Logger s_logger = LoggerFactory.getLogger(InterpolatedForwardCurveDefaults.class);
+  /** The interpolator name */
   private final Set<String> _forwardCurveInterpolator;
+  /** The left extrapolator name */
   private final Set<String> _forwardCurveLeftExtrapolator;
+  /** The right extrapolator name */
   private final Set<String> _forwardCurveRightExtrapolator;
 
+  /**
+   * @param forwardCurveInterpolator The interpolator name
+   * @param forwardCurveLeftExtrapolator The left extrapolator name
+   * @param forwardCurveRightExtrapolator The right extrapolator name
+   */
   public InterpolatedForwardCurveDefaults(final String forwardCurveInterpolator, final String forwardCurveLeftExtrapolator, final String forwardCurveRightExtrapolator) {
     super(ComputationTargetType.ANYTHING, true); // // [PLAT-2286]: change to correct type
     ArgumentChecker.notNull(forwardCurveInterpolator, "forward curve interpolator");
@@ -52,6 +64,7 @@ public class InterpolatedForwardCurveDefaults extends DefaultPropertyFunction {
       case ForwardCurveValuePropertyNames.PROPERTY_FORWARD_CURVE_RIGHT_EXTRAPOLATOR:
         return _forwardCurveRightExtrapolator;
       default:
+        s_logger.error("Could not get default value for property called {}", propertyName);
         return null;
     }
   }

@@ -63,7 +63,8 @@ public class EquityOptionVolatilitySurfaceDataFunction extends AbstractFunction.
   /** The logger */
   private static final Logger s_logger = LoggerFactory.getLogger(EquityOptionVolatilitySurfaceDataFunction.class);
   /** The supported schemes */
-  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK, ExternalSchemes.ACTIVFEED_TICKER);
+  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK,
+      ExternalSchemes.ACTIVFEED_TICKER, ExternalSchemes.OG_SYNTHETIC_TICKER);
 
   private ConfigDBVolatilitySurfaceSpecificationSource _volatilitySurfaceSpecificationSource;
 
@@ -72,12 +73,12 @@ public class EquityOptionVolatilitySurfaceDataFunction extends AbstractFunction.
     _volatilitySurfaceSpecificationSource = ConfigDBVolatilitySurfaceSpecificationSource.init(context, this);
   }
 
-  @Override
   /**
    * {@inheritDoc} <p>
    * INPUT: We are taking a VolatilitySurfaceData object, which contains all number of missing data, plus strikes and vols are in percentages <p>
    * OUTPUT: and converting this into a StandardVolatilitySurfaceData object, which has no empty values, expiry is in years, and the strike and vol scale is without unit (35% -> 0.35)
    */
+  @Override
   public Set<ComputedValue> execute(final FunctionExecutionContext executionContext, final FunctionInputs inputs, final ComputationTarget target, final Set<ValueRequirement> desiredValues) {
 
     final ZonedDateTime valTime = ZonedDateTime.now(executionContext.getValuationClock());

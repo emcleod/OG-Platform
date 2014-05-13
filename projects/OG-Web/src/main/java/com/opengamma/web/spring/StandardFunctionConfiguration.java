@@ -21,6 +21,12 @@ import com.opengamma.engine.function.config.ParameterizedFunctionConfiguration;
 import com.opengamma.engine.value.SurfaceAndCubePropertyNames;
 import com.opengamma.engine.value.ValuePropertyNames;
 import com.opengamma.financial.analytics.CurrencyPairsDefaults;
+import com.opengamma.financial.analytics.curve.CurveConstructionConfiguration;
+import com.opengamma.financial.analytics.curve.CurveDefinition;
+import com.opengamma.financial.analytics.curve.CurveNodeIdMapper;
+import com.opengamma.financial.analytics.ircurve.CurveSpecificationBuilderConfiguration;
+import com.opengamma.financial.analytics.ircurve.YieldCurveDefinition;
+import com.opengamma.financial.analytics.ircurve.calcconfig.MultiCurveCalculationConfig;
 import com.opengamma.financial.analytics.model.bond.BondFunction;
 import com.opengamma.financial.analytics.model.bond.BondFunctions;
 import com.opengamma.financial.analytics.model.bondfutureoption.BondFutureOptionBlackFunction;
@@ -35,12 +41,16 @@ import com.opengamma.financial.analytics.model.equity.option.OptionFunctions;
 import com.opengamma.financial.analytics.model.equity.portfoliotheory.PortfolioTheoryFunctions;
 import com.opengamma.financial.analytics.model.fixedincome.InterestRateInstrumentFunction;
 import com.opengamma.financial.analytics.model.future.FutureFunctions;
+import com.opengamma.financial.analytics.model.future.FuturesFunction;
+import com.opengamma.financial.analytics.model.futureoption.FutureOptionFunction;
 import com.opengamma.financial.analytics.model.futureoption.FutureOptionFunctions;
 import com.opengamma.financial.analytics.model.horizon.HorizonFunctions;
 import com.opengamma.financial.analytics.model.irfutureoption.IRFutureOptionFunctions;
+import com.opengamma.financial.analytics.model.irfutureoption.InterestRateFutureOptionBlackFunction;
 import com.opengamma.financial.analytics.model.multicurve.MultiCurvePricingFunctions;
 import com.opengamma.financial.analytics.model.pnl.PNLFunctions;
 import com.opengamma.financial.analytics.model.sensitivities.SensitivitiesFunctions;
+import com.opengamma.financial.analytics.model.swaption.black.SwaptionBlackFunction;
 import com.opengamma.financial.analytics.model.var.VaRFunctions;
 import com.opengamma.financial.analytics.model.volatility.local.defaultproperties.LocalVolatilitySurfaceDefaults;
 import com.opengamma.financial.analytics.model.volatility.surface.black.BlackVolatilitySurfacePropertyNamesAndValues;
@@ -471,21 +481,29 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
   public static class EquityInfo {
     /** The equity ticker */
     private final String _equity;
-    /** The discounting curve name. Usually the default value of the {@link EquityOptionFunction#PROPERTY_DISCOUNTING_CURVE_NAME} */
+    /** The discounting curve name. Usually the default value of the {@link EquityOptionFunction#PROPERTY_DISCOUNTING_CURVE_NAME} property */
     private final Value _discountingCurve = new Value();
-    /** The discounting curve calculation configuration name. Usually the default value of the {@link EquityOptionFunction#PROPERTY_DISCOUNTING_CURVE_CONFIG}  */
+    /** The discounting curve calculation configuration name. Usually the default value of the {@link EquityOptionFunction#PROPERTY_DISCOUNTING_CURVE_CONFIG} property */
     private final Value _discountingCurveConfig = new Value();
-    /** The volatility surface name. Usually the default value of the {@link ValuePropertyNames#SURFACE} */
+    /** The discounting curve currency. Usually the default value of the {@link ValuePropertyNames#CURVE_CURRENCY} property */
+    private final Value _discountingCurveCurrency = new Value();
+    /** The volatility surface name. Usually the default value of the {@link ValuePropertyNames#SURFACE} property */
     private final Value _volatilitySurface = new Value();
-    /** The volatility surface calculation method. Usually the default value of the {@link ValuePropertyNames#SURFACE_CALCULATION_METHOD} */
+    /** The volatility surface calculation method. Usually the default value of the {@link ValuePropertyNames#SURFACE_CALCULATION_METHOD} property */
     private final Value _surfaceCalculationMethod = new Value();
-    /** The volatility surface interpolation method name. Usually the default value of the {@link BlackVolatilitySurfacePropertyNamesAndValues#PROPERTY_SMILE_INTERPOLATOR} */
+    /** The volatility surface interpolation method name. Usually the default value of the {@link BlackVolatilitySurfacePropertyNamesAndValues#PROPERTY_SMILE_INTERPOLATOR} property */
     private final Value _surfaceInterpolationMethod = new Value();
-    /** The forward curve name. Usually the default value of the {@link ForwardCurveValuePropertyNames#PROPERTY_FORWARD_CURVE_NAME} */
+    /** The forward curve name. Usually the default value of the {@link ForwardCurveValuePropertyNames#PROPERTY_FORWARD_CURVE_NAME} property */
     private final Value _forwardCurve = new Value();
-    /** The forward curve calculation method name. Usually the default value of the {@link ForwardCurveValuePropertyNames#PROPERTY_FORWARD_CURVE_CALCULATION_METHOD} */
+    /** The forward curve interpolator */
+    private final Value _forwardCurveInterpolator = new Value();
+    /** The forward curve left extrapolator */
+    private final Value _forwardCurveLeftExtrapolator = new Value();
+    /** The forward curve right extrapolator */
+    private final Value _forwardCurveRightExtrapolator = new Value();
+    /** The forward curve calculation method name. Usually the default value of the {@link ForwardCurveValuePropertyNames#PROPERTY_FORWARD_CURVE_CALCULATION_METHOD} property */
     private final Value _forwardCurveCalculationMethod = new Value();
-    /** The dividend type. Usually the default value of the {@link ValuePropertyNames#DIVIDEND_TYPE} */
+    /** The dividend type. Usually the default value of the {@link ValuePropertyNames#DIVIDEND_TYPE} property */
     private final Value _dividendType = new Value();
 
     /**
@@ -536,7 +554,25 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
      * @return The discounting curve configuration name
      */
     public String getDiscountingCurveConfig(final String key) {
-      return _discountingCurve.get(key);
+      return _discountingCurveConfig.get(key);
+    }
+
+    /**
+     * Sets the discounting curve currency.
+     * @param key The key
+     * @param discountingCurveCurrency The discounting curve currency
+     */
+    public void setDiscountingCurveCurrency(final String key, final String discountingCurveCurrency) {
+      _discountingCurveCurrency.set(key, discountingCurveCurrency);
+    }
+
+    /**
+     * Gets the discounting curve currency for a key.
+     * @param key The key
+     * @return The discounting curve currency
+     */
+    public String getDiscountingCurveCurrency(final String key) {
+      return _discountingCurveCurrency.get(key);
     }
 
     /**
@@ -575,16 +611,139 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
       return _surfaceCalculationMethod.get(key);
     }
 
-    //    SurfaceInterpolationMethod
-    //    ForwardCurve
-    //    ForwardCurveCalculationMethod
-    //    DividendType
+    /**
+     * Sets the volatility surface interpolation method for a key.
+     * @param key The key
+     * @param surfaceInterpolationMethod The volatility surface interpolation method
+     */
+    public void setSurfaceInterpolationMethod(final String key, final String surfaceInterpolationMethod) {
+      _surfaceInterpolationMethod.set(key, surfaceInterpolationMethod);
+    }
+
+    /**
+     * Gets the volatility surface interpolation method for a key.
+     * @param key The key
+     * @return The volatility surface interpolation method
+     */
+    public String getSurfaceInterpolationMethod(final String key) {
+      return _surfaceInterpolationMethod.get(key);
+    }
+
+    /**
+     * Sets the forward curve name for a key.
+     * @param key The key
+     * @param forwardCurve The forward curve name
+     */
+    public void setForwardCurve(final String key, final String forwardCurve) {
+      _forwardCurve.set(key, forwardCurve);
+    }
+
+    /**
+     * Gets the forward curve name for a key.
+     * @param key The key
+     * @return The forward curve name
+     */
+    public String getForwardCurve(final String key) {
+      return _forwardCurve.get(key);
+    }
+
+    /**
+     * Sets the forward curve interpolator name for a key.
+     * @param key The key
+     * @param forwardCurveInterpolator The forward curve interpolator name
+     */
+    public void setForwardCurveInterpolator(final String key, final String forwardCurveInterpolator) {
+      _forwardCurveInterpolator.set(key, forwardCurveInterpolator);
+    }
+
+    /**
+     * Gets the forward curve interpolator name for a key.
+     * @param key The key
+     * @return The forward curve interpolator name
+     */
+    public String getForwardCurveInterpolator(final String key) {
+      return _forwardCurveInterpolator.get(key);
+    }
+
+    /**
+     * Sets the forward curve left extrapolator name for a key.
+     * @param key The key
+     * @param forwardCurveLeftExtrapolator The forward curve left extrapolator name
+     */
+    public void setForwardCurveLeftExtrapolator(final String key, final String forwardCurveLeftExtrapolator) {
+      _forwardCurveLeftExtrapolator.set(key, forwardCurveLeftExtrapolator);
+    }
+
+    /**
+     * Gets the forward curve name for a key.
+     * @param key The key
+     * @return The forward curve name
+     */
+    public String getForwardCurveLeftExtrapolator(final String key) {
+      return _forwardCurveLeftExtrapolator.get(key);
+    }
+
+    /**
+     * Sets the forward curve right extrapolator name for a key.
+     * @param key The key
+     * @param forwardCurveRightExtrapolator The forward curve right extrapolator name
+     */
+    public void setForwardCurveRightExtrapolator(final String key, final String forwardCurveRightExtrapolator) {
+      _forwardCurveRightExtrapolator.set(key, forwardCurveRightExtrapolator);
+    }
+
+    /**
+     * Gets the forward curve right extrapolator name for a key.
+     * @param key The key
+     * @return The forward curve right extrapolator name
+     */
+    public String getForwardCurveRightExtrapolator(final String key) {
+      return _forwardCurveRightExtrapolator.get(key);
+    }
+
+    /**
+     * Sets the forward curve calculation method for a key.
+     * @param key The key
+     * @param forwardCurveCalculationMethod The forward curve calculation method
+     */
+    public void setForwardCurveCalculationMethod(final String key, final String forwardCurveCalculationMethod) {
+      _forwardCurveCalculationMethod.set(key, forwardCurveCalculationMethod);
+    }
+
+    /**
+     * Gets the forward curve calculation method for a key.
+     * @param key The key
+     * @return The forward curve calculation method
+     */
+    public String getForwardCurveCalculationMethod(final String key) {
+      return _forwardCurveCalculationMethod.get(key);
+    }
+
+    /**
+     * Sets the dividend type for a key.
+     * @param key The key
+     * @param dividendType The dividend type
+     */
+    public void setDividendType(final String key, final String dividendType) {
+      _dividendType.set(key, dividendType);
+    }
+
+    /**
+     * Gets the dividend type for a key.
+     * @param key The key
+     * @return The dividend type
+     */
+    public String getDividendType(final String key) {
+      return _dividendType.get(key);
+    }
   }
 
   /** A map of currency strings to per-currency default values */
   private final Map<String, CurrencyInfo> _perCurrencyInfo = new HashMap<>();
   /** A map of currency string pairs to per-currency pair default values */
   private final Map<Pair<String, String>, CurrencyPairInfo> _perCurrencyPairInfo = new HashMap<>();
+  /** A map of equity ticker strings to equity ticker default values */
+  private final Map<String, EquityInfo> _perEquityInfo = new HashMap<>();
   /** The default value of the mark to market data field */
   private String _mark2MarketField;
   /** The default value of the cost of carry data field */
@@ -639,6 +798,12 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return _perCurrencyInfo.get(currency);
   }
 
+  /**
+   * Gets the currency information for a given filter.
+   * @param <T> The type of the object that contains default values for a currency
+   * @param filter The filter
+   * @return T The object that contains default values for a currency
+   */
   protected <T> Map<String, T> getCurrencyInfo(final Function1<CurrencyInfo, T> filter) {
     final Map<String, T> result = new HashMap<>();
     for (final Map.Entry<String, CurrencyInfo> e : getPerCurrencyInfo().entrySet()) {
@@ -659,26 +824,120 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return result;
   }
 
+  /**
+   * Sets the map of currency pair strings to per-currency pair default values.
+   * @param perCurrencyPairInfo A map of currency pair strings to per-currency pair default values
+   */
   public void setPerCurrencyPairInfo(final Map<Pair<String, String>, CurrencyPairInfo> perCurrencyPairInfo) {
     _perCurrencyPairInfo.clear();
     _perCurrencyPairInfo.putAll(perCurrencyPairInfo);
   }
 
+  /**
+   * Gets the map of currency pair strings to per-currency pair default values.
+   * @return A map of currency pair strings to per-currency pair default values
+   */
   public Map<Pair<String, String>, CurrencyPairInfo> getPerCurrencyPairInfo() {
     return _perCurrencyPairInfo;
   }
 
+  /**
+   * Sets information for a currency pair.
+   * @param currencyPair The currency pair strings
+   * @param info The information
+   */
   public void setCurrencyPairInfo(final Pair<String, String> currencyPair, final CurrencyPairInfo info) {
     _perCurrencyPairInfo.put(currencyPair, info);
   }
 
+  /**
+   * Gets information for a currency pair.
+   * @param currencyPair The currency pair strings
+   * @return The information
+   */
   public CurrencyPairInfo getCurrencyPairInfo(final Pair<String, String> currencyPair) {
     return _perCurrencyPairInfo.get(currencyPair);
   }
 
+  /**
+   * Gets the currency pair information for a given filter.
+   * @param <T> The type of the object that contains default values for a currency pair 
+   * @param filter The filter
+   * @return T The object that contains default values for a currency pair
+   */
   protected <T> Map<Pair<String, String>, T> getCurrencyPairInfo(final Function1<CurrencyPairInfo, T> filter) {
     final Map<Pair<String, String>, T> result = new HashMap<>();
     for (final Map.Entry<Pair<String, String>, CurrencyPairInfo> e : getPerCurrencyPairInfo().entrySet()) {
+      final T entry = filter.execute(e.getValue());
+      if (entry instanceof InitializingBean) {
+        try {
+          ((InitializingBean) entry).afterPropertiesSet();
+        } catch (final Exception ex) {
+          s_logger.debug("Skipping {}", e.getKey());
+          s_logger.trace("Caught exception", e);
+          continue;
+        }
+      }
+      if (entry != null) {
+        result.put(e.getKey(), entry);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Sets the map of equity tickers to per-equity ticker default values.
+   * @param perEquityInfo A map of equity tickers to per-equity default values.
+   */
+  public void setPerEquityInfo(final Map<String, EquityInfo> perEquityInfo) {
+    _perEquityInfo.clear();
+    _perEquityInfo.putAll(perEquityInfo);
+  }
+
+  /**
+   * Gets the map of equity tickers to per-equity ticker default values.
+   * @return The map of equity tickers to per-equity ticker default values
+   */
+  public Map<String, EquityInfo> getPerEquityInfo() {
+    return _perEquityInfo;
+  }
+
+  /**
+   * Sets per-equity default values for an equity ticker.
+   * @param equity The equity ticker
+   * @param info The per-equity ticker default values
+   */
+  public void setEquityInfo(final String equity, final EquityInfo info) {
+    _perEquityInfo.put(equity, info);
+  }
+
+  /**
+   * Gets the per-equity default values for an equity ticker. 
+   * @param equity The equity ticker
+   * @return The per-equity default values
+   */
+  public EquityInfo getEquityInfo(final String equity) {
+    return _perEquityInfo.get(equity);
+  }
+
+  /**
+   * Creates a per-equity default information object for an equity string.
+   * @param equity The equity string
+   * @return An empty per-equity info object
+   */
+  protected EquityInfo defaultEquityInfo(final String equity) {
+    return new EquityInfo(equity);
+  }
+
+  /**
+   * Gets the equity ticker information for a given filter.
+   * @param <T> The type of the object that contains default values for an equity ticker
+   * @param filter The filter
+   * @return T The object that contains default values for an equity ticker
+   */
+  protected <T> Map<String, T> getEquityInfo(final Function1<EquityInfo, T> filter) {
+    final Map<String, T> result = new HashMap<>();
+    for (final Map.Entry<String, EquityInfo> e : getPerEquityInfo().entrySet()) {
       final T entry = filter.execute(e.getValue());
       if (entry instanceof InitializingBean) {
         try {
@@ -1311,10 +1570,18 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     setCurrencyPairInfo(Pairs.of("USD", "ZAR"), usdZarCurrencyPairInfo());
   }
 
+  /**
+   * Adds the default name of the {@link CurrencyPairs} configuration to the list of functions.
+   * @param functionConfigs The list of functions
+   */
   protected void addCurrencyConversionFunctions(final List<FunctionConfiguration> functionConfigs) {
     functionConfigs.add(functionConfiguration(CurrencyPairsDefaults.class, CurrencyPairs.DEFAULT_CURRENCY_PAIRS));
   }
 
+  /**
+   * Adds the default function for local volatility surface defaults to the list of functions.
+   * @param functionConfigs The list of functions
+   */
   protected void addLocalVolatilitySurfaceDefaults(final List<FunctionConfiguration> functionConfigs) {
     functionConfigs.add(new ParameterizedFunctionConfiguration(LocalVolatilitySurfaceDefaults.class.getName(),
         GeneralLocalVolatilitySurfaceDefaults.getLocalVolatilitySurfaceDefaults()));
@@ -1326,6 +1593,11 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     addLocalVolatilitySurfaceDefaults(functions);
   }
 
+  /**
+   * Performs any operations that are required after properties are set e.g. null checks.
+   * @param defaults The configuration source populated with defaults
+   * @return A populated configuration source
+   */
   protected FunctionConfigurationSource getRepository(final SingletonFactoryBean<FunctionConfigurationSource> defaults) {
     try {
       defaults.afterPropertiesSet();
@@ -1345,7 +1617,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Credit curve calculation configuration name = model/bond/credit => curveConfiguration field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setBondFunctionDefaults(final CurrencyInfo i, final BondFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setRiskFreeCurveName(i.getCurveName("model/bond/riskFree"));
@@ -1356,7 +1628,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency default values for functions that extend {@link BondFunction}.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setBondFunctionDefaults(final BondFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, BondFunctions.Defaults.CurrencyInfo>() {
@@ -1386,7 +1658,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Surface name = model/bondfutureoption => surfaceName field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setBondFutureOptionDefaults(final CurrencyInfo i, final BondFutureOptionFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfig(i.getCurveConfiguration("model/bondfutureoption"));
@@ -1395,7 +1667,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency default values for functions that extend {@link BondFutureOptionBlackFunction}.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setBondFutureOptionDefaults(final BondFutureOptionFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, BondFutureOptionFunctions.Defaults.CurrencyInfo>() {
@@ -1427,7 +1699,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Hazard rate = model/credit/hazardrate => curveCalculationMethod field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setCDSFunctionDefaults(final CurrencyInfo i, final CreditFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveCalculationConfig(i.getCurveConfiguration("model/credit/yield"));
@@ -1438,7 +1710,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency default values for CDS and CDX functions.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setCDSFunctionDefaults(final CreditFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, CreditFunctions.Defaults.CurrencyInfo>() {
@@ -1470,7 +1742,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <b>This default value will only work correctly if the curve configuration has curves in both
    * currencies<b>.
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setXCcySwapFunctionDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveCalculationConfig(i.getCurveConfiguration("model/xccyswap"));
@@ -1478,7 +1750,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency default values for cross-currency swaps.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setXCcySwapFunctionDefaults(final com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults.CurrencyInfo>() {
@@ -1503,26 +1775,60 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return getRepository(defaults);
   }
 
+  /**
+   * Adds deprecated functions to the configuration source. This method does not add any functions
+   * but is maintained for backwards compatibility.
+   * @return The configuration source populated with deprecated functions
+   */
   protected FunctionConfigurationSource deprecatedFunctions() {
     return null;
   }
 
+  /**
+   * This method does not add any defaults but is maintained for backwards compatibility.
+   * @param defaults The object containing default values
+   */
   protected void setEquityOptionDefaults(final OptionFunctions.Defaults defaults) {
+    return;
   }
 
+  /**
+   * Adds deprecated equity option functions to the configuration source. This method adds defaults
+   * for equity barrier options but does not add any curve or surface default values to the 
+   * configuration source.
+   * @return The configuration source populated with deprecated functions
+   */
   protected FunctionConfigurationSource equityOptionFunctions() {
     final OptionFunctions.Defaults defaults = new OptionFunctions.Defaults();
     setEquityOptionDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * This method does not add any defaults but is maintained for backwards compatibility.
+   * @param calculators The external sensitivities calculators
+   */
   protected void setExternalSensitivitesCalculators(final SensitivitiesFunctions.Calculators calculators) {
+    return;
   }
 
+  /**
+   * Sets the paths for the per-currency default values for external sensitivities with the keys<p>
+   * <ul>
+   * <li> Curve configuration name = model/sensitivities => curveConfiguration field
+   * </ul>
+   * <p>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setExternalSensitivitiesDefaults(final CurrencyInfo i, final SensitivitiesFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/sensitivities"));
   }
 
+  /**
+   * Sets the per-currency default values for external sensitivities.
+   * @param defaults The object containing the default values
+   */
   protected void setExternalSensitivitiesDefaults(final SensitivitiesFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, SensitivitiesFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -1534,6 +1840,11 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds default values for external sensitivities to the configuration source. This method also sets the value for the historical time
+   * series resolution key as defined in {@link SensitivitiesFunctions}.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource externalSensitivitiesFunctions() {
     final SensitivitiesFunctions.Calculators calculators = new SensitivitiesFunctions.Calculators();
     setExternalSensitivitesCalculators(calculators);
@@ -1548,16 +1859,18 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Curve configuration name = model/fixedincome => curveConfiguration field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
+  @SuppressWarnings("javadoc")
   protected void setFixedIncomeDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveCalculationConfig(i.getCurveConfiguration("model/fixedincome"));
   }
 
   /**
    * Sets the per-currency default values for functions that extend {@link InterestRateInstrumentFunction}.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
+  @SuppressWarnings("javadoc")
   protected void setFixedIncomeDefaults(final com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -1574,6 +1887,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * Adds default values for functions that extend {@link InterestRateInstrumentFunction} to the configuration source.
    * @return The configuration source populated with default values
    */
+  @SuppressWarnings("javadoc")
   protected FunctionConfigurationSource fixedIncomeFunctions() {
     final com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults defaults =
         new com.opengamma.financial.analytics.model.fixedincome.DeprecatedFunctions.Defaults();
@@ -1588,7 +1902,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Discounting curve name = model/forex/discounting => discountingCurve field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForexDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.forex.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/forex"));
@@ -1602,7 +1916,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Forward curve name = model/forex/forward => forwardCurveName field
    * </ul>
    * @param i The per-currency pair info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForexDefaults(final CurrencyPairInfo i, final com.opengamma.financial.analytics.model.forex.defaultproperties.DefaultPropertiesFunctions.CurrencyPairInfo defaults) {
     defaults.setSurfaceName(i.getSurfaceName("model/forex"));
@@ -1611,7 +1925,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency and per-currency pair default values for FX instruments.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForexDefaults(final com.opengamma.financial.analytics.model.forex.defaultproperties.DefaultPropertiesFunctions defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.forex.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo>() {
@@ -1647,7 +1961,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets default values (over-hedge and relative strike smoothing) for one-look FX barrier options priced with the Black method.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForexOptionDefaults(final com.opengamma.financial.analytics.model.forex.option.black.BlackFunctions.Defaults defaults) {
     return;
@@ -1665,14 +1979,14 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets default values (call spread) for FX digital options priced using a call spread.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForexDigitalDefaults(final com.opengamma.financial.analytics.model.forex.option.callspreadblack.CallSpreadBlackFunctions.Defaults defaults) {
     return;
   }
 
   /**
-   * Adds default values for functions for functions that price FX digital options to the configuration source.
+   * Adds default values for functions that price FX digital options to the configuration source.
    * @return The configuration source populated with default values
    */
   protected FunctionConfigurationSource forexDigitalFunctions() {
@@ -1690,7 +2004,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
    * <li> Forward curve name = model/curve/forward => curveName field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForwardCurveDefaults(final CurrencyInfo i, final ForwardFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/curve/forward"));
@@ -1699,12 +2013,12 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
   }
 
   /**
-   * Sets the paths for the per-currency pairs default values for FX forward curves<p>
+   * Sets the paths for the per-currency pairs default values for FX forward curves with the keys<p>
    * <ul>
    * <li> Forward curve name = model/curve/forward => curveName field
    * </ul>
    * @param i The per-currency info
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForwardCurveDefaults(final CurrencyPairInfo i, final ForwardFunctions.Defaults.CurrencyPairInfo defaults) {
     defaults.setCurveName(i.getCurveName("model/curve/forward"));
@@ -1712,7 +2026,7 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
 
   /**
    * Sets the per-currency and per-currency pair default values for FX forward curves.
-   * @param defaults The default values
+   * @param defaults The object containing the default values
    */
   protected void setForwardCurveDefaults(final ForwardFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, ForwardFunctions.Defaults.CurrencyInfo>() {
@@ -1743,10 +2057,23 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return getRepository(defaults);
   }
 
+  /**
+   * Sets the paths for the per-currency pairs default values for functions that extend {@link FuturesFunction}
+   * with the keys<p>
+   * <ul> 
+   * <li> Curve configuration = model/future => curveConfiguration field
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setFutureDefaults(final CurrencyInfo i, final FutureFunctions.Deprecated.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/future"));
   }
 
+  /**
+   * Sets default values for functions that extend {@link FuturesFunction}.
+   * @param defaults The default values
+   */
   protected void setFutureDefaults(final FutureFunctions.Deprecated defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, FutureFunctions.Deprecated.CurrencyInfo>() {
       @Override
@@ -1758,10 +2085,18 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Sets the closing price field for functions that extend {@link FuturesFunction}.
+   * @param calculators The calculators
+   */
   protected void setFutureFunctionCalculators(final FutureFunctions.Calculators calculators) {
     calculators.setClosingPriceField(getMark2MarketField());
   }
 
+  /**
+   * Adds default values for functions that extend {@link FuturesFunction} to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource futureFunctions() {
     final FutureFunctions.Calculators calculators = new FutureFunctions.Calculators();
     setFutureFunctionCalculators(calculators);
@@ -1770,6 +2105,22 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return CombiningFunctionConfigurationSource.of(getRepository(calculators), getRepository(defaults));
   }
 
+  /**
+   * Sets the per-currency default values for functions that extend {@link FutureOptionFunction} with the keys<p>
+   * <ul>
+   * <li> Curve name = model/futureoption => curveName field
+   * <li> Curve calculation configuration name = model/futureoption => curveConfiguration field
+   * <li> Volatility surface name = model/futureoption => volatilitySurface field
+   * <li> Forward curve name = model/futureoption => forwardCurveName field
+   * </ul>
+   * and optionally sets<p>
+   * <ul>
+   * <li> Forward curve calculation method = model/futureoption => forwardCurveCalculationMethod
+   * <li> Surface calculation method = model/futureoption => surfaceCalculationMethod
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setFutureOptionDefaults(final CurrencyInfo i, final FutureOptionFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveName(i.getCurveName("model/futureoption"));
     defaults.setCurveCalculationConfig(i.getCurveConfiguration("model/futureoption"));
@@ -1785,6 +2136,10 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }
   }
 
+  /**
+   * Sets default values for functions that extend {@link FutureOptionFunction}.
+   * @param defaults The default values
+   */
   protected void setFutureOptionDefaults(final FutureOptionFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, FutureOptionFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -1796,56 +2151,110 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds default values for functions that extend {@link FutureOptionFunction} to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource futureOptionFunctions() {
     final FutureOptionFunctions.Defaults defaults = new FutureOptionFunctions.Defaults();
     setFutureOptionDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Adds default values for horizon functions to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource horizonFunctions() {
     final HorizonFunctions.Defaults defaults = new HorizonFunctions.Defaults();
     setHorizonDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Sets the default value for the number of days forward to calculate the horizon.
+   * @param defaults The object containing the default values
+   */
   protected void setHorizonDefaults(final HorizonFunctions.Defaults defaults) {
     defaults.setDaysForward(1);
   }
 
+  /**
+   * Sets default values for root-finding parameters used in curve construction for <b>all</b> currencies that are
+   * available. These defaults apply to the older method of constructing curves (i.e. using {@link YieldCurveDefinition},
+   * {@link CurveSpecificationBuilderConfiguration} and {@link MultiCurveCalculationConfig}).
+   * @param defaults The object containing the default values
+   */
   protected void setInterestRateDefaults(final InterestRateFunctions.Defaults defaults) {
     defaults.setApplicableCurrencies(getPerCurrencyInfo().keySet());
   }
 
+  /**
+   * Adds default values for root-finding parameters in (old) curve construction to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource interestRateFunctions() {
     final InterestRateFunctions.Defaults defaults = new InterestRateFunctions.Defaults();
     setInterestRateDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Adds default values for root-finding parameters in (new) curve construction to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource curveFunctions() {
     final CurveFunctions.Defaults defaults = new CurveFunctions.Defaults();
     setCurveDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Sets default values for root-finding parameters used in curve construction. These defaults apply to the newer
+   * method of constructing curves (i.e. using {@link CurveDefinition}, {@link CurveNodeIdMapper} and 
+   * {@link CurveConstructionConfiguration}.
+   * @param defaults The object containing the default values
+   */
   protected void setCurveDefaults(final CurveFunctions.Defaults defaults) {
     defaults.setAbsoluteTolerance(_absoluteTolerance);
     defaults.setRelativeTolerance(_relativeTolerance);
     defaults.setMaximumIterations(_maxIterations);
   }
 
+  /**
+   * Sets default values for root-finding parameters used in curve construction for pricing and risk functions that
+   * use these curves. These defaults apply to the newer method of constructing curves (i.e. using {@link CurveDefinition}, 
+   * {@link CurveNodeIdMapper} and  {@link CurveConstructionConfiguration}.
+   * @param defaults The object containing the default values
+   */
   protected void setMultiCurvePricingDefaults(final MultiCurvePricingFunctions.Defaults defaults) {
     defaults.setAbsoluteTolerance(_absoluteTolerance);
     defaults.setRelativeTolerance(_relativeTolerance);
     defaults.setMaximumIterations(_maxIterations);
   }
 
+  /**
+   * Sets the per-currency default values for functions that extend {@link InterestRateFutureOptionBlackFunction} with the keys<p>
+   * <ul>
+   * <li> Curve name = model/irfutureoption => curveName field
+   * <li> Curve calculation configuration name = model/irfutureoption => curveConfiguration field
+   * <li> Volatility surface name = model/irfutureoption => volatilitySurface field
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
+  @SuppressWarnings("javadoc")
   protected void setIRFutureOptionDefaults(final CurrencyInfo i, final IRFutureOptionFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/irfutureoption"));
     defaults.setSurfaceName(i.getSurfaceName("model/irfutureoption"));
     defaults.setCurveName(i.getCurveName("model/irfutureoption"));
   }
 
+  /**
+   * Sets default values for functions that extend {@link InterestRateFutureOptionBlackFunction}.
+   * @param defaults The object containing the default values
+   */
+  @SuppressWarnings("javadoc")
   protected void setIRFutureOptionDefaults(final IRFutureOptionFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, IRFutureOptionFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -1857,17 +2266,35 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds default values for functions that extend {@link InterestRateFutureOptionBlackFunction} to the configuration source.
+   * @return The configuration source populated with default values
+   */
+  @SuppressWarnings("javadoc")
   protected FunctionConfigurationSource irFutureOptionFunctions() {
     final IRFutureOptionFunctions.Defaults defaults = new IRFutureOptionFunctions.Defaults();
     setIRFutureOptionDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Sets the per-currency default values for functions that construct local volatility surface with the keys<p>
+   * <ul>
+   * <li> Discounting curve name = model/volatility/local/discounting => discountingCurveName field
+   * <li> Curve configuration name = model/volatility/local => curveConfiguration field
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setLocalVolatilityDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.volatility.local.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/volatility/local"));
     defaults.setDiscountingCurve(i.getCurveName("model/volatility/local/discounting"));
   }
 
+  /**
+   * Sets default values for functions that construct local volatility surfaces.
+   * @param defaults The object containing the default values
+   */
   protected void setLocalVolatilityDefaults(final com.opengamma.financial.analytics.model.volatility.local.defaultproperties.DefaultPropertiesFunctions defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.volatility.local.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo>() {
       @Override
@@ -1880,6 +2307,10 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds default values for functions that construct local volatility surfaces to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource localVolatilityFunctions() {
     final com.opengamma.financial.analytics.model.volatility.local.defaultproperties.DefaultPropertiesFunctions defaults =
         new com.opengamma.financial.analytics.model.volatility.local.defaultproperties.DefaultPropertiesFunctions();
@@ -1887,26 +2318,56 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return getRepository(defaults);
   }
 
+  /**
+   * Adds default values for functions that calculate prices and risk using the new curve configurations to
+   * the configuration source
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource multicurvePricingFunctions() {
     final MultiCurvePricingFunctions.Defaults defaults = new MultiCurvePricingFunctions.Defaults();
     setMultiCurvePricingDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Adds default values for the mark-to-market and cost-of-carry fields used in P&L calculations.
+   * @param calculators The functions
+   */
   protected void setPNLFunctionCalculators(final PNLFunctions.Calculators calculators) {
     calculators.setCostOfCarryField(getCostOfCarryField());
     calculators.setMark2MarketField(getMark2MarketField());
   }
 
+  /**
+   * Sets per-currency default values for P&L calculations with the keys<p>
+   * <ul>
+   * <li> Curve configuration = model/pnl => curveConfiguration field
+   * <li> Discounting curve name = model/pnl/discounting => discountingCurveName field
+   * </ul>
+   * @param i The per-currency defaults
+   * @param defaults The object containing the default values
+   */
   protected void setPNLFunctionDefaults(final CurrencyInfo i, final PNLFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/pnl"));
     defaults.setDiscountingCurve(i.getCurveName("model/pnl/discounting"));
   }
 
+  /**
+   * Sets per-currency pair default values for P&L calculations for FX options with the keys<p>
+   * <ul>
+   * <li> Volatility surface name = model/pnl => surfaceName field
+   * </ul>
+   * @param i The per-currency pair defaults
+   * @param defaults The object containing the default values
+   */
   protected void setPNLFunctionDefaults(final CurrencyPairInfo i, final PNLFunctions.Defaults.CurrencyPairInfo defaults) {
     defaults.setSurfaceName(i.getSurfaceName("model/pnl"));
   }
 
+  /**
+   * Sets per-currency and per-currency pair defaults for functions that calculate P&L.
+   * @param defaults The object containing the default values
+   */
   protected void setPNLFunctionDefaults(final PNLFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, PNLFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -1926,6 +2387,10 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds defaults for P&L calculations to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource pnlFunctions() {
     final PNLFunctions.Calculators calculators = new PNLFunctions.Calculators();
     setPNLFunctionCalculators(calculators);
@@ -1934,12 +2399,35 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return CombiningFunctionConfigurationSource.of(getRepository(calculators), getRepository(defaults));
   }
 
+  /**
+   * Sets the default value for the historical time series resolution key for functions that calculate portfolio-level risk measures.
+   * @param calculators The calculators
+   */
   protected void setPortfolioTheoryCalculators(final PortfolioTheoryFunctions.Calculators calculators) {
+    return;
   }
 
+  /**
+   * Sets default values for functions that calculate portfolio-level risk measures. The values are for<p>:
+   * <ul>
+   * <li> Return calculation e.g. net or gross
+   * <li> Sampling period e.g. 2y
+   * <li> Sampling function e.g. pad with previous value
+   * <li> Standard deviation calculator name e.g. sample or population
+   * <li> Covariance calculator name e.g. sample or population
+   * <li> Variance calculator name e.g. sample or population
+   * <li> Excess return calculation name e.g. mean
+   * </ul>
+   * @param defaults The object containing the default values
+   */
   protected void setPortfolioTheoryDefaults(final PortfolioTheoryFunctions.Defaults defaults) {
+    return;
   }
 
+  /**
+   * Adds default values for portfolio-level risk measures to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource portfolioTheoryFunctions() {
     final PortfolioTheoryFunctions.Calculators calculators = new PortfolioTheoryFunctions.Calculators();
     setPortfolioTheoryCalculators(calculators);
@@ -1948,6 +2436,18 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return CombiningFunctionConfigurationSource.of(getRepository(calculators), getRepository(defaults));
   }
 
+  /**
+   * Sets per-currency default values for functions that use volatility cubes fitted with the SABR model for the keys<p>
+   * <ul>
+   * <li> Curve construction configuration = model/sabrcube
+   * <li> Cube definition name = model/sabrcube
+   * <li> Cube specification name = model/sabrcube
+   * <li> Surface definition name = model/sabrcube
+   * <li> Surface specification name = model/sabrcube
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setSABRCubeDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo defaults) {
     defaults.setCurveConfiguration(i.getCurveConfiguration("model/sabrcube"));
     defaults.setCubeDefinitionName(i.getCubeDefinitionName("model/sabrcube"));
@@ -1956,6 +2456,10 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     defaults.setSurfaceSpecificationName(i.getSurfaceSpecificationName("model/sabrcube"));
   }
 
+  /**
+   * Sets per-currency default values for functions that use volatility cubes fitted with the SABR model.
+   * @param defaults The object containing the default values
+   */
   protected void setSABRCubeDefaults(final com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo>() {
       @Override
@@ -1966,17 +2470,12 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
         return d;
       }
     }));
-    final Object temp = getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo>() {
-      @Override
-      public com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo execute(final CurrencyInfo i) {
-        final com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo d =
-            new com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo();
-        setSABRCubeDefaults(i, d);
-        return d;
-      }
-    });
   }
 
+  /**
+   * Adds default values for functions that use volatility cubes fitted with the SABR model to the configuration source.
+   * @return The configuration source populated with the default values
+   */
   protected FunctionConfigurationSource sabrCubeFunctions() {
     final com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions defaults =
         new com.opengamma.financial.analytics.model.sabrcube.defaultproperties.DefaultPropertiesFunctions();
@@ -1984,11 +2483,26 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     return getRepository(defaults);
   }
 
+  /**
+   * Sets per-currency default values for functions that extend {@link SwaptionBlackFunction} for the keys<p>
+   * <ul>
+   * <li> Curve configuration name = model/swaption/black => curveConfiguration field
+   * <li> Volatility surface name = model/swaption/black => surfaceName field
+   * </ul>
+   * @param i The per-currency info 
+   * @param defaults The object containing the default values
+   */
+  @SuppressWarnings("javadoc")
   protected void setSwaptionDefaults(final CurrencyInfo i, final com.opengamma.financial.analytics.model.swaption.black.BlackFunctions.Defaults.CurrencyInfo defaults) {
     defaults.setCurveConfig(i.getCurveConfiguration("model/swaption/black"));
     defaults.setSurfaceName(i.getSurfaceName("model/swaption/black"));
   }
 
+  /**
+   * Sets per-currency default values for functions that extend {@link SwaptionBlackFunction}.
+   * @param defaults The object containing the default values
+   */
+  @SuppressWarnings("javadoc")
   protected void setSwaptionDefaults(final com.opengamma.financial.analytics.model.swaption.black.BlackFunctions.Defaults defaults) {
     defaults.setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.swaption.black.BlackFunctions.Defaults.CurrencyInfo>() {
       @Override
@@ -2001,24 +2515,83 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     }));
   }
 
+  /**
+   * Adds default values for functions that extend {@link SwaptionBlackFunction} to the configuration source.
+   * @return The configuration source populated with default values
+   */
+  @SuppressWarnings("javadoc")
   protected FunctionConfigurationSource swaptionFunctions() {
     final com.opengamma.financial.analytics.model.swaption.black.BlackFunctions.Defaults defaults = new com.opengamma.financial.analytics.model.swaption.black.BlackFunctions.Defaults();
     setSwaptionDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Sets default values for functions that calculate VaR. The values are for<p>:
+   * <ul>
+   * <li> Sampling period e.g. 2y
+   * <li> Schedule e.g. daily or weekly
+   * <li> Sampling function e.g. pad with previous value
+   * <li> Mean calculator name
+   * <li> Standard deviation calculator name e.g. sample or population
+   * <li> Confidence level
+   * <li> Horizon
+   * </ul>
+   * @param defaults The object containing the default values
+   */
   protected void setVaRDefaults(final VaRFunctions.Defaults defaults) {
+    return;
   }
 
+  /**
+   * Adds default values for functions that calculate VaR to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource varFunctions() {
     final VaRFunctions.Defaults defaults = new VaRFunctions.Defaults();
     setVaRDefaults(defaults);
     return getRepository(defaults);
   }
 
+  /**
+   * Sets default values for functions that fit volatility surfaces using SABR. The values are for<p>:
+   * <ul>
+   * <li> x interpolator name
+   * <li> left x extrapolator name
+   * <li> right x extrapolator name
+   * <li> y interpolator name
+   * <li> left y extrapolator name
+   * <li> right y extrapolator name
+   * <li> fix alpha
+   * <li> fix beta
+   * <li> fix rho
+   * <li> fix nu
+   * <li> alpha start value 
+   * <li> beta start value
+   * <li> rho start value
+   * <li> nu start value
+   * <li> error
+   * </ul>
+   * @param defaults The object containing the default values
+   */
   protected void setVolatilitySurfaceDefaults(final com.opengamma.financial.analytics.model.volatility.surface.SurfaceFunctions.Defaults defaults) {
+    return;
   }
 
+  /**
+   * Sets per-currency default values for functions that create a Black volatility surface for the keys<p>
+   * <ul>
+   * <li> Forward curve name = model/volatility/surface/black => curveName field
+   * <li> Forward curve calculation method name = model/volatility/surface/black => forwardCurveCalculationMethod field
+   * <li> Volatility surface name = model/volatility/surface/black => surfaceName field
+   * </ul>
+   * and optionally sets<p>
+   * <ul>
+   * <li> Curve calculation method = model/volatility/surface/black => curveCalculationMethod field
+   * </ul>
+   * @param i The per-currency info
+   * @param defaults The object containing the default values
+   */
   protected void setVolatilitySurfaceBlackDefaults(final CurrencyInfo i,
       final com.opengamma.financial.analytics.model.volatility.surface.black.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo defaults) {
     defaults.setCurveName(i.getForwardCurveName("model/volatility/surface/black"));
@@ -2029,6 +2602,20 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     defaults.setSurfaceName(i.getSurfaceName("model/volatility/surface/black"));
   }
 
+  /**
+   * Sets per-currency pair default values for functions that create an FX Black volatility surface for the keys<p>
+   * <ul>
+   * <li> Forward curve name = model/volatility/surface/black => curveName field
+   * <li> Forward curve calculation method name = model/volatility/surface/black => forwardCurveCalculationMethod field
+   * <li> Volatility surface name = model/volatility/surface/black => surfaceName field
+   * </ul>
+   * and optionally sets<p>
+   * <ul>
+   * <li> Curve calculation method = model/volatility/surface/black => curveCalculationMethod field
+   * </ul>
+   * @param i The per-currency pair info
+   * @param defaults The object containing the default values
+   */
   protected void setVolatilitySurfaceBlackDefaults(final CurrencyPairInfo i,
       final com.opengamma.financial.analytics.model.volatility.surface.black.defaultproperties.DefaultPropertiesFunctions.CurrencyPairInfo defaults) {
     defaults.setCurveName(i.getCurveName("model/volatility/surface/black"));
@@ -2039,6 +2626,10 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
     defaults.setSurfaceName(i.getSurfaceName("model/volatility/surface/black"));
   }
 
+  /**
+   * Sets defaults for functions that create Black volatility surfaces.
+   * @param defaults The object containing the default values
+   */
   protected void setVolatilitySurfaceBlackDefaults(final com.opengamma.financial.analytics.model.volatility.surface.black.defaultproperties.DefaultPropertiesFunctions defaults) {
     defaults
         .setPerCurrencyInfo(getCurrencyInfo(new Function1<CurrencyInfo, com.opengamma.financial.analytics.model.volatility.surface.black.defaultproperties.DefaultPropertiesFunctions.CurrencyInfo>() {
@@ -2063,9 +2654,26 @@ public abstract class StandardFunctionConfiguration extends AbstractFunctionConf
         }));
   }
 
+  /**
+   * Sets default values for functions that create Black volatility surfaces. The values are for<p>:
+   * <ul>
+   * <li> x interpolator name
+   * <li> left x extrapolator name
+   * <li> right x extrapolator name
+   * <li> y interpolator name
+   * <li> left y extrapolator name
+   * <li> right y extrapolator name
+   * </ul>
+   * @param defaults The object containing the default values
+   */
   protected void setVolatilitySurfaceDefaults(final com.opengamma.financial.analytics.volatility.surface.SurfaceFunctions.Defaults defaults) {
+    return;
   }
 
+  /**
+   * Adds default values for functions that construct Black volatility surfaces to the configuration source.
+   * @return The configuration source populated with default values
+   */
   protected FunctionConfigurationSource volatilitySurfaceFunctions() {
     final com.opengamma.financial.analytics.model.volatility.surface.SurfaceFunctions.Defaults d1 = new com.opengamma.financial.analytics.model.volatility.surface.SurfaceFunctions.Defaults();
     setVolatilitySurfaceDefaults(d1);

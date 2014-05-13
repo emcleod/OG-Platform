@@ -25,7 +25,8 @@ import com.opengamma.id.VersionCorrection;
  */
 public class RawEquityOptionVolatilitySurfaceDataFunction extends RawVolatilitySurfaceDataFunction {
   /** The valid schemes for equity option volatility surfaces */
-  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK, ExternalSchemes.ACTIVFEED_TICKER);
+  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK,
+      ExternalSchemes.ACTIVFEED_TICKER, ExternalSchemes.OG_SYNTHETIC_TICKER);
 
   /**
    * Default constructor

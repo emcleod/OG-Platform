@@ -44,7 +44,8 @@ import com.opengamma.util.money.Currency;
  */
 public class EquityForwardCurveFunction extends AbstractFunction.NonCompiledInvoker {
 
-  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK, ExternalSchemes.ACTIVFEED_TICKER);
+  private static final Set<ExternalScheme> s_validSchemes = ImmutableSet.of(ExternalSchemes.BLOOMBERG_TICKER, ExternalSchemes.BLOOMBERG_TICKER_WEAK,
+      ExternalSchemes.ACTIVFEED_TICKER, ExternalSchemes.OG_SYNTHETIC_TICKER);
 
   @Override
   public Set<ValueSpecification> getResults(final FunctionCompilationContext context, final ComputationTarget target) {
@@ -155,7 +156,7 @@ public class EquityForwardCurveFunction extends AbstractFunction.NonCompiledInvo
     final YieldCurve fundingCurve = (YieldCurve) fundingCurveObject;
     // Dividend type: Discrete or Continuous 
     final String dividendType = desiredValue.getConstraint(ValuePropertyNames.DIVIDEND_TYPE);
-    boolean isContinuousDividends = ValuePropertyNames.DIVIDEND_TYPE_CONTINUOUS.equalsIgnoreCase(dividendType);
+    final boolean isContinuousDividends = ValuePropertyNames.DIVIDEND_TYPE_CONTINUOUS.equalsIgnoreCase(dividendType);
     // Compute ForwardCurve
     final ForwardCurve forwardCurve;
     if (isContinuousDividends) {
@@ -165,7 +166,7 @@ public class EquityForwardCurveFunction extends AbstractFunction.NonCompiledInvo
       final YieldCurve costOfCarryCurve = YieldCurve.from(ConstantDoublesCurve.from(dividendYield, "CostOfCarry"));
       forwardCurve = new ForwardCurveYieldImplied(spot, fundingCurve, costOfCarryCurve);
     } else {
-      Object discreteDividendsInput = inputs.getValue(ValueRequirementNames.AFFINE_DIVIDENDS);
+      final Object discreteDividendsInput = inputs.getValue(ValueRequirementNames.AFFINE_DIVIDENDS);
       if ((discreteDividendsInput != null) && (discreteDividendsInput instanceof AffineDividends)) {
         final AffineDividends discreteDividends = (AffineDividends) discreteDividendsInput;
         forwardCurve = new ForwardCurveAffineDividends(spot, fundingCurve, discreteDividends);

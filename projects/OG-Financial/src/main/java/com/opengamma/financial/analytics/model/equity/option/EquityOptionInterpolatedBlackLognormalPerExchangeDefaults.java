@@ -18,7 +18,8 @@ public class EquityOptionInterpolatedBlackLognormalPerExchangeDefaults extends E
 
   /**
    * @param priority The priority class of {@link DefaultPropertyFunction} instances, allowing them to be ordered relative to each other, not null
-   * @param perExchangeConfig Defaults values of curve configuration, discounting curve, surface name and interpolation method per exchange, not null
+   * @param perExchangeConfig Default values of discounting curve, discounting curve configuration, surface name and interpolation method,
+   * forward curve name and forward curve calculation method per exchange, not null
    */
   public EquityOptionInterpolatedBlackLognormalPerExchangeDefaults(final String priority, final String... perExchangeConfig) {
     super(priority, perExchangeConfig);
