@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -265,8 +266,13 @@ public class ExampleLiveDataServer extends StandardLiveDataServer {
             for (final FudgeField field : lastValues) {
               final double lastValue = (Double) field.getValue();
               final double baseValue = baseValues.getDouble(field.getName());
-              final double value = wiggleValue(lastValue, baseValue);
-              nextValues.add(field.getName(), value);
+              final List<FudgeField> allFields = baseValues.getAllFields();
+              if (allFields.size() == 1 && allFields.get(0).getName().equals("LAST_IMPVOL")) {
+                nextValues.add(field.getName(), baseValue);
+              } else {
+                final double value = wiggleValue(lastValue, baseValue);
+                nextValues.add(field.getName(), value);
+              }
             }
             _marketValues.put(identifier, nextValues);
             liveDataReceived(identifier, nextValues);
