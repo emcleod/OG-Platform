@@ -5,7 +5,6 @@
  */
 package com.opengamma.examples.simulated.volatility.surface;
 
-import org.apache.commons.lang.Validate;
 import org.threeten.bp.LocalDate;
 
 import com.opengamma.OpenGammaRuntimeException;
@@ -13,31 +12,55 @@ import com.opengamma.core.id.ExternalSchemes;
 import com.opengamma.core.value.MarketDataRequirementNames;
 import com.opengamma.financial.analytics.volatility.surface.SurfaceInstrumentProvider;
 import com.opengamma.id.ExternalId;
+import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.time.Tenor;
 
 /**
- * Generates Example codes for swaption volatilities given tenors.
+ * Generates example ids for swaption volatilities given tenors.
  */
 public class ExampleSwaptionVolatilitySurfaceInstrumentProvider implements SurfaceInstrumentProvider<Tenor, Tenor> {
+  /** The country prefix */
   private final String _countryPrefix;
+  /** The type prefix */
   private final String _typePrefix;
+  /** The postfix */
   private final String _postfix;
+  /** True if the swap maturity tenor is to be zero-padded */
   private final boolean _zeroPadSwapMaturityTenor;
+  /** True if the swaption expiry tenor is to be zero-padded */
   private final boolean _zeroPadSwaptionExpiryTenor;
-  private final String _dataFieldName; // expecting MarketDataRequirementNames.MARKET_VALUE or PX_LAST
+  /** The data field name */
+  private final String _dataFieldName;
+  /** Month codes */
   private static final String[] MONTHS_TABLE = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "1A", "1B", "1C",
-    "1D", "1E", "1F", "1G", "1H", "1I", "1J", "1K", "1L"};
+    "1D", "1E", "1F", "1G", "1H", "1I", "1J", "1K", "1L" };
 
+  /**
+   * Constructor where the market data field name is set to {@link MarketDataRequirementNames#MARKET_VALUE}.
+   * @param countryPrefix The country prefix
+   * @param typePrefix The type prefix
+   * @param zeroPadSwapMaturityTenor True if the swap maturity tenor is to be zero-padded
+   * @param zeroPadSwaptionExpiryTenor True if the swaption expiry tenor is to be zero-padded
+   * @param postfix The postfix
+   */
   public ExampleSwaptionVolatilitySurfaceInstrumentProvider(final String countryPrefix, final String typePrefix, final boolean zeroPadSwapMaturityTenor, final boolean zeroPadSwaptionExpiryTenor,
       final String postfix) {
     this(countryPrefix, typePrefix, zeroPadSwapMaturityTenor, zeroPadSwaptionExpiryTenor, postfix, MarketDataRequirementNames.MARKET_VALUE);
   }
 
+  /**
+   * @param countryPrefix The country prefix
+   * @param typePrefix The type prefix
+   * @param zeroPadSwapMaturityTenor True if the swap maturity tenor is to be zero-padded
+   * @param zeroPadSwaptionExpiryTenor True if the swaption expiry tenor is to be zero-padded
+   * @param postfix The postfix
+   * @param dataFieldName The data field name
+   */
   public ExampleSwaptionVolatilitySurfaceInstrumentProvider(final String countryPrefix, final String typePrefix, final boolean zeroPadSwapMaturityTenor, final boolean zeroPadSwaptionExpiryTenor,
       final String postfix, final String dataFieldName) {
-    Validate.notNull(countryPrefix);
-    Validate.notNull(typePrefix);
-    Validate.notNull(postfix);
+    ArgumentChecker.notNull(countryPrefix, "countryPrefix");
+    ArgumentChecker.notNull(typePrefix, "typePrefix");
+    ArgumentChecker.notNull(postfix, "postfix");
     _countryPrefix = countryPrefix;
     _typePrefix = typePrefix;
     _zeroPadSwapMaturityTenor = zeroPadSwapMaturityTenor;
@@ -62,7 +85,14 @@ public class ExampleSwaptionVolatilitySurfaceInstrumentProvider implements Surfa
     return getInstrument(startTenor, maturity);
   }
 
-  private String tenorToCode(final Tenor tenor, final boolean prepadWithZero) {
+  /**
+   * Converts a tenor to a code, taking into account the conversion to month codes
+   * and the zero-padding or not.
+   * @param tenor The tenor
+   * @param prepadWithZero True if the result is to be zero-padded
+   * @return The code
+   */
+  private static String tenorToCode(final Tenor tenor, final boolean prepadWithZero) {
     if (tenor.getPeriod().getYears() == 0) {
       final int months = tenor.getPeriod().getMonths();
       if (months > 0) {
@@ -138,7 +168,7 @@ public class ExampleSwaptionVolatilitySurfaceInstrumentProvider implements Surfa
       return false;
     }
     final ExampleSwaptionVolatilitySurfaceInstrumentProvider other = (ExampleSwaptionVolatilitySurfaceInstrumentProvider) o;
-    // we can avoid using ObjectUtil.equals because we validated the strings as not null.
+    // we can avoid using ObjectUtil.equals because we ArgumentCheckerd the strings as not null.
     return getCountryPrefix().equals(other.getCountryPrefix()) &&
         getPostfix().equals(other.getPostfix()) &&
         getTypePrefix().equals(other.getTypePrefix()) &&

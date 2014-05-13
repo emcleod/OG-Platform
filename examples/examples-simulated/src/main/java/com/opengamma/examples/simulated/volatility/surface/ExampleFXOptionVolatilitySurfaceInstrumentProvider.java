@@ -75,6 +75,12 @@ public class ExampleFXOptionVolatilitySurfaceInstrumentProvider implements Surfa
     return createFXVolatilityCode(tenor, volDeltaQuoteType);
   }
 
+  /**
+   * Creates a volatility ticker.
+   * @param tenor The tenor
+   * @param volDeltaQuoteType The volatility quote type
+   * @return The id of the ticker
+   */
   private ExternalId createFXVolatilityCode(final Tenor tenor, final Pair<Number, FXVolQuoteType> volDeltaQuoteType) {
     final StringBuffer ticker = new StringBuffer();
     ticker.append(_fxPrefix);

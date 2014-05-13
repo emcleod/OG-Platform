@@ -5,7 +5,6 @@
  */
 package com.opengamma.examples.simulated.volatility.surface;
 
-import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.bp.LocalDate;
@@ -16,37 +15,61 @@ import com.opengamma.core.id.ExternalSchemes;
 import com.opengamma.financial.analytics.volatility.surface.SurfaceInstrumentProvider;
 import com.opengamma.id.ExternalId;
 import com.opengamma.id.ExternalScheme;
+import com.opengamma.util.ArgumentChecker;
 
 /**
- * Generates equity option Synthetic ticker codes from ATM strike (set via init()), tenor, double and date).
+ * Generates equity option synthetic ticker codes from ATM strike (set via init()), tenor, double and date).
  */
 public class ExampleEquityOptionVolatilitySurfaceInstrumentProvider implements SurfaceInstrumentProvider<LocalDate, Double> {
+  /** The logger */
   private static final Logger s_logger = LoggerFactory.getLogger(ExampleEquityOptionVolatilitySurfaceInstrumentProvider.class);
+  /** The ticker scheme */
   private static final ExternalScheme SCHEME = ExternalSchemes.OG_SYNTHETIC_TICKER;
-  private final String _underlyingPrefix; //expecting something like DJX
-  private final String _postfix; //expecting Index or Equity
-  private final String _dataFieldName; //expecting MarketDataRequirementNames.MARKET_VALUE
-  private static final DateTimeFormatter s_dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yy");
-
+  /** The prefix of the underlying spot rate */
+  private final String _underlyingPrefix;
+  /** The postfix */
+  private final String _postfix;
+  /** The market data field name */
+  private final String _dataFieldName;
+  /** The date formatter for expiries */
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yy");
+  /** True if puts are to be generated */
   private Boolean _generatePuts;
 
+  /**
+   * @param underlyingPrefix The prefix of the underlying spot rate
+   * @param postfix The ticker postfix
+   * @param dataFieldName The data field name
+   */
   public ExampleEquityOptionVolatilitySurfaceInstrumentProvider(final String underlyingPrefix, final String postfix, final String dataFieldName) {
-    Validate.notNull(underlyingPrefix, "underlying prefix");
-    Validate.notNull(postfix, "postfix");
-    Validate.notNull(dataFieldName, "data field name");
+    ArgumentChecker.notNull(underlyingPrefix, "underlying prefix");
+    ArgumentChecker.notNull(postfix, "postfix");
+    ArgumentChecker.notNull(dataFieldName, "data field name");
     _underlyingPrefix = underlyingPrefix;
     _postfix = postfix;
     _dataFieldName = dataFieldName;
   }
 
+  /**
+   * Sets whether or not to generate puts (true) or calls (false).
+   * @param generatePuts True if puts are to be generated
+   */
   public void init(final boolean generatePuts) {
     _generatePuts = generatePuts;
   }
 
+  /**
+   * Gets the underlying spot rate prefix.
+   * @return The underlying spot rate prefix
+   */
   public String getUnderlyingPrefix() {
     return _underlyingPrefix;
   }
 
+  /**
+   * Gets the ticker postfix.
+   * @return The postfix
+   */
   public String getPostfix() {
     return _postfix;
   }
@@ -63,16 +86,12 @@ public class ExampleEquityOptionVolatilitySurfaceInstrumentProvider implements S
 
   @Override
   public ExternalId getInstrument(final LocalDate expiry, final Double strike, final LocalDate surfaceDate) {
-    return createEquityOptionVolatilityCode(expiry, strike);
-  }
-
-  private ExternalId createEquityOptionVolatilityCode(final LocalDate expiry, final Double strike) {
     if (_generatePuts == null) {
-      s_logger.error("Cannot create option volatility code until atm strike is set (use init method)");
+      s_logger.error("Cannot create option volatility code until init() has been called");
     }
     final StringBuffer ticker = new StringBuffer();
     ticker.append(_underlyingPrefix);
-    final String formattedDate = s_dateFormatter.format(expiry);
+    final String formattedDate = DATE_FORMATTER.format(expiry);
     ticker.append(formattedDate);
     // TODO: check this logic
     if (_generatePuts) {

@@ -17,7 +17,7 @@ import org.fudgemsg.mapping.FudgeDeserializer;
 import org.fudgemsg.mapping.FudgeSerializer;
 
 /**
- * Builder for converting BloombergSwaptionVolatilitySurfaceInstrumentProvider instances to/from Fudge messages.
+ * Builder for converting {@link ExampleSwaptionVolatilitySurfaceInstrumentProvider} instances to/from Fudge messages.
  */
 @FudgeBuilderFor(ExampleSwaptionVolatilitySurfaceInstrumentProvider.class)
 public class ExampleSwaptionVolatilitySurfaceInstrumentProviderFudgeBuilder implements FudgeBuilder<ExampleSwaptionVolatilitySurfaceInstrumentProvider> {
@@ -37,16 +37,22 @@ public class ExampleSwaptionVolatilitySurfaceInstrumentProviderFudgeBuilder impl
 
   @Override
   public ExampleSwaptionVolatilitySurfaceInstrumentProvider buildObject(final FudgeDeserializer deserializer, final FudgeMsg message) {
-    String dataFieldName = getDataFieldName(message);
+    final String dataFieldName = getDataFieldName(message);
     if (dataFieldName == null) {
       return new ExampleSwaptionVolatilitySurfaceInstrumentProvider(getCountryPrefix(message), message.getString("type"),
-                   message.getBoolean("zeroPadFirstTenor"), message.getBoolean("zeroPadSecondTenor"), getPostFix(message));
+          message.getBoolean("zeroPadFirstTenor"), message.getBoolean("zeroPadSecondTenor"), getPostFix(message));
     }
     return new ExampleSwaptionVolatilitySurfaceInstrumentProvider(getCountryPrefix(message), message.getString("type"),
         message.getBoolean("zeroPadFirstTenor"), message.getBoolean("zeroPadSecondTenor"), getPostFix(message), dataFieldName);
   }
 
-  private String getPostFix(final FudgeMsg message) {
+  /**
+   * Gets the postfix string from a message, trying first {@link #POSTFIX_FIELD_NAME}, then "postfix".
+   * This is done for backwards compatibility.
+   * @param message The message
+   * @return The postfix
+   */
+  private static String getPostFix(final FudgeMsg message) {
     String postfix = message.getString(POSTFIX_FIELD_NAME);
     //backward compatibility
     if (postfix == null) {
@@ -55,7 +61,13 @@ public class ExampleSwaptionVolatilitySurfaceInstrumentProviderFudgeBuilder impl
     return postfix;
   }
 
-  private String getCountryPrefix(final FudgeMsg message) {
+  /**
+   * Gets the country prefix string from a message, trying first {@link #PREFIX_FIELD_NAME}, then "countryPrefix".
+   * This is done for backwards compatibility.
+   * @param message The message
+   * @return The country prefix
+   */
+  private static String getCountryPrefix(final FudgeMsg message) {
     String countryPrefix = message.getString(PREFIX_FIELD_NAME);
     //backward compatibility
     if (countryPrefix == null) {
@@ -64,7 +76,13 @@ public class ExampleSwaptionVolatilitySurfaceInstrumentProviderFudgeBuilder impl
     return countryPrefix;
   }
 
-  private String getDataFieldName(final FudgeMsg message) {
+  /**
+   * Gets the data field string from a message, trying first {@link #DATA_FIELD_NAME}, then "dataFieldName".
+   * This is done for backwards compatibility.
+   * @param message The message
+   * @return The data field name
+   */
+  private static String getDataFieldName(final FudgeMsg message) {
     String dataFieldName = message.getString(DATA_FIELD_NAME);
     //backward compatibility
     if (dataFieldName == null) {
