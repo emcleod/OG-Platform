@@ -52,6 +52,7 @@ import com.opengamma.financial.analytics.timeseries.DateConstraint;
 import com.opengamma.financial.analytics.timeseries.HistoricalTimeSeriesBundle;
 import com.opengamma.financial.analytics.timeseries.HistoricalTimeSeriesFunctionUtils;
 import com.opengamma.financial.convention.ConventionBundle;
+import com.opengamma.financial.convention.ConventionBundleMaster;
 import com.opengamma.financial.convention.ConventionBundleSource;
 import com.opengamma.financial.security.capfloor.CapFloorCMSSpreadSecurity;
 import com.opengamma.financial.security.capfloor.CapFloorSecurity;
@@ -1675,7 +1676,9 @@ public class FixedIncomeConverterDataProvider {
   }
 
   /**
-   * Returns the ExternalIDBundle associated to an ExternalId of an IborIndex as stored in the security source.
+   * Returns the {@link ExternalIdBundle} associated with an {@link ExternalId} of an {@link IborIndex} as stored in the security source.
+   * <b>If this index is not present, it will look up the identifiers in a {@link ConventionBundleMaster}. This is to
+   * maintain backwards compatibility</b>
    * @param indexId The external id.
    * @return The bundle.
    */
@@ -1683,9 +1686,9 @@ public class FixedIncomeConverterDataProvider {
     final Security sec = _securitySource.getSingle(indexId.toBundle());
     if (sec == null) {
       s_logger.info("Ibor index security with id {} is null; falling back to ConventionBundleMaster", indexId.toBundle());
-      ConventionBundle convention = _conventionSource.getConventionBundle(indexId);
+      final ConventionBundle convention = _conventionSource.getConventionBundle(indexId);
       if (convention == null) {
-        throw new OpenGammaRuntimeException("Could not get convention bundle for " + indexId); 
+        throw new OpenGammaRuntimeException("Could not get convention bundle for " + indexId);
       }
       return convention.getIdentifiers();
     }
@@ -1697,14 +1700,21 @@ public class FixedIncomeConverterDataProvider {
   }
 
   /**
-   * Returns the ExternalIDBundle associated to an ExternalId of an OvernightIndex as stored in the security source.
+   * Returns the {@link ExternalIdBundle} associated with an {@link ExternalId} of an {@link OvernightIndex} as stored in the security source.
+   * <b>If this index is not present, it will look up the identifiers in a {@link ConventionBundleMaster}. This is to
+   * maintain backwards compatibility</b>
    * @param indexId The external id.
    * @return The bundle.
    */
   private ExternalIdBundle getIndexOvernightIdBundle(final ExternalId indexId) {
     final Security sec = _securitySource.getSingle(indexId.toBundle());
     if (sec == null) {
-      throw new OpenGammaRuntimeException("Index with id " + indexId.toBundle() + " is null");
+      s_logger.info("Overnight index security with id {} is null; falling back to ConventionBundleMaster", indexId.toBundle());
+      final ConventionBundle convention = _conventionSource.getConventionBundle(indexId);
+      if (convention == null) {
+        throw new OpenGammaRuntimeException("Could not get convention bundle for " + indexId);
+      }
+      return convention.getIdentifiers();
     }
     if (!(sec instanceof OvernightIndex)) {
       throw new OpenGammaRuntimeException("Security with id " + indexId.toBundle() + " is not an OvernightIndex");

@@ -129,6 +129,10 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
    * The name of an equity total return swap portfolio.
    */
   public static final String EQUITY_TRS_PORTFOLIO_NAME = "Equity Total Return Swaps";
+  /**
+   * The name of an OIS portfolio.
+   */
+  public static final String OIS_PORTFOLIO_NAME = "OIS Portfolio";
 
   /** Logger. */
   private static final Logger s_logger = LoggerFactory.getLogger(ExampleDatabasePopulator.class);
@@ -176,13 +180,14 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadIndexPortfolio();
     loadBondTotalReturnSwapPortfolio();
     loadEquityTotalReturnSwapPortfolio();
+    loadOISPortfolio();
     loadFXImpliedCurveCalculationConfigurations();
-    loadViews();
     loadFunctionConfigurations();
     loadExposureFunctions();
     loadFXImpliedCurveConfigurations();
     loadCurveConfigurations();
     loadUgandanBondCurveConfigurations();
+    loadViews();
   }
 
   private void loadFunctionConfigurations() {
@@ -542,6 +547,19 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     try {
       final ExampleUgandanBondCurveConfigurationsLoader loader = new ExampleUgandanBondCurveConfigurationsLoader();
       loader.run(getToolContext());
+      log.done();
+    } catch (final RuntimeException t) {
+      log.fail(t);
+    }
+  }
+
+  /**
+   * Loads an example OIS portfolio.
+   */
+  private void loadOISPortfolio() {
+    final Log log = new Log("Creating example OIS portfolio");
+    try {
+      portfolioGeneratorTool().run(getToolContext(), OIS_PORTFOLIO_NAME, "OIS", true, null);
       log.done();
     } catch (final RuntimeException t) {
       log.fail(t);

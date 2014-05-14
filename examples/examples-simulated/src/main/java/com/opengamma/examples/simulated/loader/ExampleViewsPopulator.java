@@ -69,6 +69,7 @@ import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.FX_
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.MIXED_CMS_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.MULTI_CURRENCY_SWAPTION_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.MULTI_CURRENCY_SWAP_PORTFOLIO_NAME;
+import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.OIS_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.SWAPTION_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.US_GOVERNMENT_BOND_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.VANILLA_FX_OPTION_PORTFOLIO_NAME;
@@ -151,13 +152,19 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
   private static final String DEFAULT_CALC_CONFIG = "Default";
   /** Logger. */
   private static final Logger s_logger = LoggerFactory.getLogger(ExampleViewsPopulator.class);
-  /** A list of currencies */
+  /** The list of swap currencies */
   private static final Currency[] s_swapCurrencies = new Currency[] {
     Currency.USD,
     Currency.GBP,
     Currency.EUR,
     Currency.JPY,
     Currency.CHF };
+  /** The list of OIS currencies */
+  private static final Currency[] s_oisCurrencies = new Currency[] {
+    Currency.USD,
+    Currency.GBP,
+    Currency.EUR,
+    Currency.JPY };
   /** A list of curve configuration names */
   private static final String[] s_curveConfigNames = new String[] {
     "DefaultTwoCurveUSDConfig",
@@ -234,6 +241,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     storeViewDefinition(getFXVolatilitySwapViewDefinition(FX_VOLATILITY_SWAP_PORTFOLIO_NAME, "FX Volatility Swap View"));
     storeViewDefinition(getBondTotalReturnSwapViewDefinition(BOND_TRS_PORTFOLIO_NAME, "Bond TRS View"));
     storeViewDefinition(getEquityTotalReturnSwapViewDefinition(EQUITY_TRS_PORTFOLIO_NAME, "Equity TRS View"));
+    storeViewDefinition(getOISViewDefinition(OIS_PORTFOLIO_NAME, "OIS View"));
   }
 
   private ViewDefinition getEquityViewDefinition(final String portfolioName) {
@@ -875,23 +883,75 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     return viewDefinition;
   }
 
-  private void addValueRequirements(final ViewCalculationConfiguration calcConfiguration, final String securityType, final String[] valueRequirementNames) {
+  /**
+   * Creates a view definition for the OIS portfolio that produces PV, par rate, PV01 and bucketed PV01.
+   * @param portfolioName The portfolio name
+   * @param viewName The view name
+   * @return The view definition
+   */
+  private ViewDefinition getOISViewDefinition(final String portfolioName, final String viewName) {
+    final UniqueId portfolioId = getPortfolioId(portfolioName).toLatest();
+    final ViewDefinition viewDefinition = new ViewDefinition(viewName, portfolioId, UserPrincipal.getTestUser());
+    viewDefinition.setDefaultCurrency(Currency.USD);
+    viewDefinition.setMaxDeltaCalculationPeriod(500L);
+    viewDefinition.setMaxFullCalculationPeriod(500L);
+    viewDefinition.setMinDeltaCalculationPeriod(500L);
+    viewDefinition.setMinFullCalculationPeriod(500L);
+    final ViewCalculationConfiguration defaultCalcConfig = new ViewCalculationConfiguration(viewDefinition, DEFAULT_CALC_CONFIG);
+    defaultCalcConfig.addPortfolioRequirementName(SwapSecurity.SECURITY_TYPE, PAR_RATE);
+    // The name "Default" has no special meaning, but means that the currency conversion function can never be used and so we get the instrument's natural currency
+    defaultCalcConfig.addPortfolioRequirement(SwapSecurity.SECURITY_TYPE, PRESENT_VALUE,
+        ValueProperties.with(CurrencyConversionFunction.ORIGINAL_CURRENCY, "Default").withOptional(CurrencyConversionFunction.ORIGINAL_CURRENCY).get());
+    defaultCalcConfig.addPortfolioRequirement(SwapSecurity.SECURITY_TYPE, PRESENT_VALUE, ValueProperties.with(CURRENCY, "USD").get());
+    final MergedOutput discountingPV01Output = new MergedOutput("PV01", MergedOutputAggregationType.LINEAR);
+    final MergedOutput discountingYCNSOutput = new MergedOutput("Bucketed PV01", MergedOutputAggregationType.LINEAR);
+    for (int i = 0; i < s_oisCurrencies.length; i++) {
+      final Currency ccy = s_oisCurrencies[i];
+      final String ccyCode = ccy.getCode();
+      discountingPV01Output.addMergedRequirement(PV01, ValueProperties.with(CURVE, "Discounting").with(CURVE_CURRENCY, ccyCode).get());
+      discountingYCNSOutput.addMergedRequirement(BUCKETED_PV01, ValueProperties.with(CURVE, "Discounting").with(CURVE_CURRENCY, ccyCode).get());
+      defaultCalcConfig.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.of(ccy), ValueProperties.with(CURVE, "Discounting")
+          .with(CURVE_CALCULATION_CONFIG, s_curveConfigNames[i]).get()));
+    }
+    defaultCalcConfig.addMergedOutput(discountingPV01Output);
+    defaultCalcConfig.addMergedOutput(discountingYCNSOutput);
+    viewDefinition.addViewCalculationConfiguration(defaultCalcConfig);
+    return viewDefinition;
+  }
+
+  /**
+   * Adds value requirements to a view calculation configuration for a particular security type.
+   * @param calcConfiguration The calculation configuration
+   * @param securityType The security type
+   * @param valueRequirementNames The value requirement name(s)
+   */
+  private static void addValueRequirements(final ViewCalculationConfiguration calcConfiguration, final String securityType, final String[] valueRequirementNames) {
     for (final String valueRequirementName : valueRequirementNames) {
       calcConfiguration.addPortfolioRequirementName(securityType, valueRequirementName);
     }
   }
 
+  /**
+   * Gets the id for a portfolio.
+   * @param portfolioName The portfolio name
+   * @return The id
+   * @throws OpenGammaRuntimeException If the portfolio could not be found
+   */
   private UniqueId getPortfolioId(final String portfolioName) {
     final PortfolioSearchRequest searchRequest = new PortfolioSearchRequest();
     searchRequest.setName(portfolioName);
     final PortfolioSearchResult searchResult = getToolContext().getPortfolioMaster().search(searchRequest);
     if (searchResult.getFirstPortfolio() == null) {
       s_logger.error("Couldn't find portfolio {}", portfolioName);
-      throw new OpenGammaRuntimeException("Couldn't find portfolio " + portfolioName);
+      throw new OpenGammaRuntimeException("Couldn't find portfolio called " + portfolioName);
     }
     return searchResult.getFirstPortfolio().getUniqueId();
   }
 
+  /**
+   * Stores a view definition
+   * @param viewDefinition The view definition
+   */
   private void storeViewDefinition(final ViewDefinition viewDefinition) {
     final ConfigItem<ViewDefinition> config = ConfigItem.of(viewDefinition, viewDefinition.getName(), ViewDefinition.class);
     ConfigMasterUtils.storeByName(getToolContext().getConfigMaster(), config);
