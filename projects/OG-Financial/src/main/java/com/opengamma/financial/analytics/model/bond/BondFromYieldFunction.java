@@ -16,6 +16,7 @@ import com.opengamma.OpenGammaRuntimeException;
 import com.opengamma.analytics.financial.instrument.bond.BondFixedSecurityDefinition;
 import com.opengamma.analytics.financial.interestrate.InstrumentDerivativeVisitorAdapter;
 import com.opengamma.analytics.financial.interestrate.bond.definition.BondFixedSecurity;
+import com.opengamma.core.value.MarketDataRequirementNames;
 import com.opengamma.engine.ComputationTarget;
 import com.opengamma.engine.ComputationTargetSpecification;
 import com.opengamma.engine.function.FunctionCompilationContext;
@@ -162,8 +163,8 @@ public abstract class BondFromYieldFunction extends BondFunction<Double> {
    * @param target The target
    * @return The value requirement
    */
-  private ValueRequirement getYieldRequirement(final ComputationTarget target) {
-    return new ValueRequirement(ValueRequirementNames.MARKET_YTM, target.toSpecification(), ValueProperties.builder().get());
+  private static ValueRequirement getYieldRequirement(final ComputationTarget target) {
+    return new ValueRequirement(MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, target.toSpecification(), ValueProperties.builder().get());
   }
 
   /**

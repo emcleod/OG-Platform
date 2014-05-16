@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 
 import org.threeten.bp.ZonedDateTime;
 
+import com.opengamma.core.id.ExternalSchemes;
 import com.opengamma.core.position.Counterparty;
 import com.opengamma.core.position.PortfolioNode;
 import com.opengamma.core.position.Position;
@@ -27,6 +28,7 @@ import com.opengamma.financial.generator.StaticNameGenerator;
 import com.opengamma.financial.generator.TreePortfolioNodeGenerator;
 import com.opengamma.financial.security.bond.GovernmentBondSecurity;
 import com.opengamma.id.ExternalId;
+import com.opengamma.id.ExternalIdBundle;
 import com.opengamma.master.position.ManageableTrade;
 import com.opengamma.master.security.ManageableSecurity;
 import com.opengamma.util.money.Currency;
@@ -43,7 +45,7 @@ public class BondPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
   private static final GovernmentBondSecurity[] BONDS = new GovernmentBondSecurity[8];
   /** Amounts of each bond */
   private static final double[] AMOUNTS = new double[8];
-  
+
   static {
     final String issuerName = "US TREASURY N/B";
     final String issuerType = "Sovereign";
@@ -59,52 +61,60 @@ public class BondPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
     final double minimumIncrement = 100;
     final double parAmount = 100;
     final double redemptionValue = 100;
-    final GovernmentBondSecurity bond1 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2019, 2, 15)), couponType, 2.75, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 2, 15),  
+    final GovernmentBondSecurity bond1 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2019, 2, 15)), couponType, 2.75, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 2, 15),
         DateUtils.getUTCDate(2009, 2, 15), DateUtils.getUTCDate(2009, 8, 15), 98.3, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond1.setName("T 2 3/4 02/15/19");
+    bond1.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000004")));
     BONDS[0] = bond1;
     AMOUNTS[0] = -140000;
-    final GovernmentBondSecurity bond2 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2017, 12, 15)), couponType, 2.75, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 12, 31),  
+    final GovernmentBondSecurity bond2 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2017, 12, 15)), couponType, 2.75, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 12, 31),
         DateUtils.getUTCDate(2010, 12, 31), DateUtils.getUTCDate(2011, 6, 30), 99.4, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond2.setName("T 2 3/4 12/15/17");
+    bond2.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000002")));
     BONDS[1] = bond2;
     AMOUNTS[1] = 350000;
-    final GovernmentBondSecurity bond3 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2018, 4, 30)), couponType, 2.625, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2011, 4, 30),  
+    final GovernmentBondSecurity bond3 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2018, 4, 30)), couponType, 2.625, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2011, 4, 30),
         DateUtils.getUTCDate(2011, 4, 30), DateUtils.getUTCDate(2011, 10, 31), 99.4, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond3.setName("T 2 5/8 04/30/18");
+    bond3.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000003")));
     BONDS[2] = bond3;
     AMOUNTS[2] = 650000;
-    final GovernmentBondSecurity bond4 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2021, 5, 15)), couponType, 3.125, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2011, 5, 15),  
+    final GovernmentBondSecurity bond4 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2021, 5, 15)), couponType, 3.125, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2011, 5, 15),
         DateUtils.getUTCDate(2011, 5, 15), DateUtils.getUTCDate(2011, 11, 15), 101.3, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond4.setName("T 3 1/8 15/05/21");
-    BONDS[3] = bond4;    
+    bond4.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000006")));
+    BONDS[3] = bond4;
     AMOUNTS[3] = -100000;
-    final GovernmentBondSecurity bond5 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2040, 8, 15)), couponType, 3.875, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 8, 15),  
+    final GovernmentBondSecurity bond5 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2040, 8, 15)), couponType, 3.875, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 8, 15),
         DateUtils.getUTCDate(2010, 8, 15), DateUtils.getUTCDate(2011, 2, 15), 100.4, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond5.setName("T 3 7/8 08/15/40");
+    bond5.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000008")));
     BONDS[4] = bond5;
     AMOUNTS[4] = -130000;
-    final GovernmentBondSecurity bond6 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2017, 11, 30)), couponType, 2.5, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 11, 30),  
+    final GovernmentBondSecurity bond6 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2017, 11, 30)), couponType, 2.5, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2010, 11, 30),
         DateUtils.getUTCDate(2010, 11, 30), DateUtils.getUTCDate(2011, 5, 31), 100., totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
-    bond6.setName("T 2 1/2 11/30/2017");
+    bond6.setName("T 2 1/2 11/30/17");
+    bond6.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000001")));
     BONDS[5] = bond6;
     AMOUNTS[5] = 120000;
-    final GovernmentBondSecurity bond7 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2039, 5, 15)), couponType, 4.25, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 5, 15),  
+    final GovernmentBondSecurity bond7 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2039, 5, 15)), couponType, 4.25, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 5, 15),
         DateUtils.getUTCDate(2009, 5, 15), DateUtils.getUTCDate(2009, 11, 15), 99.1, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond7.setName("T 4 1/4 05/15/39");
+    bond7.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000007")));
     BONDS[6] = bond7;
     AMOUNTS[6] = 230000;
-    final GovernmentBondSecurity bond8 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency, 
-        yieldConvention, new Expiry(DateUtils.getUTCDate(2019, 11, 15)), couponType, 3.375, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 11, 15),  
+    final GovernmentBondSecurity bond8 = new GovernmentBondSecurity(issuerName, issuerType, issuerDomicile, market, currency,
+        yieldConvention, new Expiry(DateUtils.getUTCDate(2019, 11, 15)), couponType, 3.375, couponFrequency, dayCountConvention, DateUtils.getUTCDate(2009, 11, 15),
         DateUtils.getUTCDate(2009, 11, 15), DateUtils.getUTCDate(2010, 5, 15), 96.9, totalAmountIssued, minimumAmount, minimumIncrement, parAmount, redemptionValue);
     bond8.setName("T 3 3/8 11/15/19");
+    bond8.setExternalIdBundle(ExternalIdBundle.of(ExternalSchemes.syntheticSecurityId("US0000000005")));
     BONDS[7] = bond8;
     AMOUNTS[7] = -250000;
   }
@@ -118,6 +128,10 @@ public class BondPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
     return rootNode;
   }
 
+  /**
+   * Creates a portfolio node for an array of government bond securities.
+   * @param <T> The type of the security
+   */
   private class GovernmentBondSecurityGenerator<T extends ManageableSecurity> extends SecurityGenerator<T> implements PortfolioNodeGenerator {
     /** The securities */
     private final GovernmentBondSecurity[] _securities;
@@ -126,6 +140,11 @@ public class BondPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
     /** The name */
     private final String _name;
 
+    /**
+     * @param securities The government bond securities
+     * @param amounts The amount in each position
+     * @param name The name of the portfolio
+     */
     public GovernmentBondSecurityGenerator(final GovernmentBondSecurity[] securities, final double[] amounts, final String name) {
       _securities = securities;
       _amounts = amounts;
