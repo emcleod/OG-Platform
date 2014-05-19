@@ -41,6 +41,7 @@ public final class NormalizationRules {
     rules.add(new FieldNameChange("YLD_YTM_MID", MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID));
     rules.add(new FieldNameChange("PX_DIRTY_MID", MarketDataRequirementNames.DIRTY_PRICE_MID));
     rules.add(new FieldNameChange("LAST_IMPVOL", MarketDataRequirementNames.IMPLIED_VOLATILITY));
+    rules.add(new FieldNameChange("LAST_YIELD", MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID));
 
     rules.add(new MarketValueCalculator());
     rules.add(new FieldHistoryUpdater());

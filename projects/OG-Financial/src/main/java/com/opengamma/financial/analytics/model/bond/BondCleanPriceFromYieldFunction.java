@@ -28,6 +28,6 @@ public class BondCleanPriceFromYieldFunction extends BondFromYieldFunction {
 
   @Override
   protected double getScaleFactor() {
-    return 100;
+    return 1;
   }
 }

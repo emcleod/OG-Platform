@@ -44,7 +44,7 @@ import com.opengamma.util.tuple.Pairs;
 
 /**
  * Creates curve construction configurations, interpolated curve definitions and 
- * curve node id mappers for a two-curve configurations. Currently, only USD curves
+ * curve node id mappers for two-curve configurations. Currently, only USD curves
  * are created.
  */
 public class ExampleCurveConfigurationsPopulator {

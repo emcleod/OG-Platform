@@ -766,6 +766,14 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     return viewDefinition;
   }
 
+  /**
+   * Creates a bond view that calculated various clean price, modified and Macaulay durations using
+   * both the clean price and the market yield quote, and present value and yield to maturity from 
+   * the clean price.
+   * @param portfolioName The name of the portfolio
+   * @param viewName The name of the view
+   * @return The view definition
+   */
   private ViewDefinition getBondViewDefinition(final String portfolioName, final String viewName) {
     final UniqueId portfolioId = getPortfolioId(portfolioName).toLatest();
     final ViewDefinition viewDefinition = new ViewDefinition(viewName, portfolioId, UserPrincipal.getTestUser());
@@ -785,8 +793,6 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, CLEAN_PRICE, ValueProperties.with(CALCULATION_METHOD, BondFunction.FROM_YIELD_METHOD).get());
     config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, MACAULAY_DURATION, ValueProperties.with(CALCULATION_METHOD, BondFunction.FROM_YIELD_METHOD).get());
     config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, MODIFIED_DURATION, ValueProperties.with(CALCULATION_METHOD, BondFunction.FROM_YIELD_METHOD).get());
-    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, ValueProperties.with(CALCULATION_METHOD, BondFunction.FROM_YIELD_METHOD).get());
-    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, YTM, ValueProperties.with(CALCULATION_METHOD, BondFunction.FROM_YIELD_METHOD).get());
     viewDefinition.addViewCalculationConfiguration(config);
     return viewDefinition;
   }
