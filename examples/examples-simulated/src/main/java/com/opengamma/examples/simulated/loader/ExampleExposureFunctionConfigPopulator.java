@@ -43,6 +43,12 @@ public class ExampleExposureFunctionConfigPopulator {
     exposureFunctionNames = Arrays.asList("Currency");
     idsToNames = new HashMap<>();
     idsToNames.put(ExternalId.of(Currency.OBJECT_SCHEME, "UGX"), "UG Government Bond Configuration");
+    idsToNames.put(ExternalId.of(Currency.OBJECT_SCHEME, "USD"), "US Government Bond Configuration");
+    exposureFunctions = new ExposureFunctions(name, exposureFunctionNames, idsToNames);
+    ConfigMasterUtils.storeByName(configMaster, makeConfig(exposureFunctions));
+    name = "Bond OIS Exposures";
+    exposureFunctionNames = Arrays.asList("Currency");
+    idsToNames = new HashMap<>();
     idsToNames.put(ExternalId.of(Currency.OBJECT_SCHEME, "USD"), "Default USD Curves");
     exposureFunctions = new ExposureFunctions(name, exposureFunctionNames, idsToNames);
     ConfigMasterUtils.storeByName(configMaster, makeConfig(exposureFunctions));
