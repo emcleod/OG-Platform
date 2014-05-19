@@ -160,7 +160,6 @@ public abstract class RawVolatilitySurfaceDataFunction extends AbstractFunction 
         final ExternalId identifier = provider.getInstrument(x, y, localDate);
         result.add(new ValueRequirement(provider.getDataFieldName(), ComputationTargetType.PRIMITIVE, identifier));
       }
-      System.err.println(provider.getInstrument(x, (Y) Double.valueOf(400.), localDate));
     }
     return result;
   }
