@@ -79,6 +79,8 @@ import com.opengamma.analytics.financial.instrument.future.BondFuturesOptionMarg
 import com.opengamma.analytics.financial.instrument.future.BondFuturesOptionMarginTransactionDefinition;
 import com.opengamma.analytics.financial.instrument.future.BondFuturesSecurityDefinition;
 import com.opengamma.analytics.financial.instrument.future.BondFuturesTransactionDefinition;
+import com.opengamma.analytics.financial.instrument.future.BondFuturesYieldAverageSecurityDefinition;
+import com.opengamma.analytics.financial.instrument.future.BondFuturesYieldAverageTransactionDefinition;
 import com.opengamma.analytics.financial.instrument.future.FederalFundsFutureSecurityDefinition;
 import com.opengamma.analytics.financial.instrument.future.FederalFundsFutureTransactionDefinition;
 import com.opengamma.analytics.financial.instrument.future.InterestRateFutureOptionMarginSecurityDefinition;
@@ -89,8 +91,6 @@ import com.opengamma.analytics.financial.instrument.future.InterestRateFutureSec
 import com.opengamma.analytics.financial.instrument.future.InterestRateFutureTransactionDefinition;
 import com.opengamma.analytics.financial.instrument.future.SwapFuturesPriceDeliverableSecurityDefinition;
 import com.opengamma.analytics.financial.instrument.future.SwapFuturesPriceDeliverableTransactionDefinition;
-import com.opengamma.analytics.financial.instrument.future.BondFuturesYieldAverageSecurityDefinition;
-import com.opengamma.analytics.financial.instrument.future.BondFuturesYieldAverageTransactionDefinition;
 import com.opengamma.analytics.financial.instrument.inflation.CapFloorInflationYearOnYearInterpolationDefinition;
 import com.opengamma.analytics.financial.instrument.inflation.CapFloorInflationYearOnYearMonthlyDefinition;
 import com.opengamma.analytics.financial.instrument.inflation.CapFloorInflationZeroCouponInterpolationDefinition;
@@ -113,6 +113,7 @@ import com.opengamma.analytics.financial.instrument.payment.CouponFixedDefinitio
 import com.opengamma.analytics.financial.instrument.payment.CouponIborAverageDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponIborCompoundingDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponIborCompoundingFlatSpreadDefinition;
+import com.opengamma.analytics.financial.instrument.payment.CouponIborCompoundingSimpleSpreadDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponIborCompoundingSpreadDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponIborDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponIborGearingDefinition;
@@ -124,6 +125,7 @@ import com.opengamma.analytics.financial.instrument.payment.CouponONArithmeticAv
 import com.opengamma.analytics.financial.instrument.payment.CouponONCompoundedDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponONDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponONSimplifiedDefinition;
+import com.opengamma.analytics.financial.instrument.payment.CouponONSpreadDefinition;
 import com.opengamma.analytics.financial.instrument.payment.CouponONSpreadSimplifiedDefinition;
 import com.opengamma.analytics.financial.instrument.payment.PaymentDefinition;
 import com.opengamma.analytics.financial.instrument.payment.PaymentFixedDefinition;
@@ -1307,6 +1309,16 @@ public class InstrumentDefinitionVisitorTest {
     }
 
     @Override
+    public String visitCouponONSpreadDefinition(final CouponONSpreadDefinition payment, final T data) {
+      return getValue(payment, true);
+    }
+
+    @Override
+    public String visitCouponONSpreadDefinition(final CouponONSpreadDefinition payment) {
+      return getValue(payment, false);
+    }
+
+    @Override
     public String visitBondFuturesSecurityDefinition(final BondFuturesSecurityDefinition bond, final T data) {
       return getValue(bond, true);
     }
@@ -1563,6 +1575,16 @@ public class InstrumentDefinitionVisitorTest {
 
     @Override
     public String visitBondFuturesOptionMarginTransactionDefinition(BondFuturesOptionMarginTransactionDefinition bondFutureOption) {
+      return null;
+    }
+
+    @Override
+    public String visitCouponIborCompoundingSimpleSpreadDefinition(CouponIborCompoundingSimpleSpreadDefinition payment) {
+      return null;
+    }
+
+    @Override
+    public String visitCouponIborCompoundingSimpleSpreadDefinition(CouponIborCompoundingSimpleSpreadDefinition payment, T data) {
       return null;
     }
 

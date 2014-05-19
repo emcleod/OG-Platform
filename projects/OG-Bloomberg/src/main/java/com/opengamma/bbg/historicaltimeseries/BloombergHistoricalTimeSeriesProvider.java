@@ -47,6 +47,7 @@ import com.opengamma.OpenGammaRuntimeException;
 import com.opengamma.bbg.AbstractBloombergStaticDataProvider;
 import com.opengamma.bbg.BloombergConnector;
 import com.opengamma.bbg.BloombergConstants;
+import com.opengamma.bbg.BloombergPermissions;
 import com.opengamma.bbg.referencedata.statistics.BloombergReferenceDataStatistics;
 import com.opengamma.bbg.util.BloombergDomainIdentifierResolver;
 import com.opengamma.id.ExternalId;
@@ -83,35 +84,10 @@ public class BloombergHistoricalTimeSeriesProvider extends AbstractHistoricalTim
    * <p>
    * This will use the statistics tool in the connector.
    * 
-   * @param bloombergConnector the Bloomberg connector, not null
+   * @param bloombergConnector the bloomberg connector, not null
    */
   public BloombergHistoricalTimeSeriesProvider(BloombergConnector bloombergConnector) {
-    this(bloombergConnector, null);
-  }
-
-  /**
-   * Creates an instance.
-   * <p>
-   * This will use the statistics tool in the connector.
-   * 
-   * @param bloombergConnector the bloomberg connector, not null
-   * @param authenticationOption the authentication option, null represent NO_AUTH,  user|none|app=<app>|dir=<property> (default: none)");
-   */
-  public BloombergHistoricalTimeSeriesProvider(BloombergConnector bloombergConnector, String authenticationOption) {
-    this(bloombergConnector, authenticationOption, AbstractBloombergStaticDataProvider.RE_AUTHORIZATION_SCHEDULE_TIME);
-  }
-
-  /**
-   * Creates an instance.
-   * <p>
-   * This will use the statistics tool in the connector.
-   * 
-   * @param bloombergConnector the bloomberg connector, not null
-   * @param authenticationOption the authentication option, null represent NO_AUTH,  user|none|app=<app>|dir=<property> (default: none)");
-   * @param reAuthorizationScheduleTime the identity re authorization schedule time in hours
-   */
-  public BloombergHistoricalTimeSeriesProvider(BloombergConnector bloombergConnector, String authenticationOption, double reAuthorizationScheduleTime) {
-    this(ArgumentChecker.notNull(bloombergConnector, "bloombergConnector"), bloombergConnector.getReferenceDataStatistics(), authenticationOption, reAuthorizationScheduleTime);
+    this(ArgumentChecker.notNull(bloombergConnector, "bloombergConnector"), bloombergConnector.getReferenceDataStatistics());
   }
 
   /**
@@ -119,12 +95,10 @@ public class BloombergHistoricalTimeSeriesProvider extends AbstractHistoricalTim
    * 
    * @param bloombergConnector the bloomberg connector, not null
    * @param statistics the statistics, not null
-   * @param authenticationOption the authentication option, null represent NO_AUTH,  user|none|app=<app>|dir=<property> (default: none)");
-   * @param reAuthorizationScheduleTime the identity re authorization schedule time in hours
    */
-  public BloombergHistoricalTimeSeriesProvider(BloombergConnector bloombergConnector, BloombergReferenceDataStatistics statistics, String authenticationOption, double reAuthorizationScheduleTime) {
+  public BloombergHistoricalTimeSeriesProvider(BloombergConnector bloombergConnector, BloombergReferenceDataStatistics statistics) {
     super(BLOOMBERG_DATA_SOURCE_NAME);
-    _historicalDataService = new BloombergHistoricalDataRequestService(bloombergConnector, statistics, authenticationOption, reAuthorizationScheduleTime);
+    _historicalDataService = new BloombergHistoricalDataRequestService(bloombergConnector, statistics);
   }
 
   //-------------------------------------------------------------------------
@@ -164,16 +138,8 @@ public class BloombergHistoricalTimeSeriesProvider extends AbstractHistoricalTim
      */
     private final BloombergReferenceDataStatistics _statistics;
 
-    public BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector) {
-      this(bloombergConnector, null);
-    }
-
-    public BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector, String authenticationOption) {
-      this(bloombergConnector, authenticationOption, AbstractBloombergStaticDataProvider.RE_AUTHORIZATION_SCHEDULE_TIME);
-    }
-
-    public BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector, String authenticationOption, double reAuthorizationScheduleTime) {
-      this(ArgumentChecker.notNull(bloombergConnector, "bloombergConnector"), bloombergConnector.getReferenceDataStatistics(), authenticationOption, reAuthorizationScheduleTime);
+    BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector) {
+      this(ArgumentChecker.notNull(bloombergConnector, "bloombergConnector"), bloombergConnector.getReferenceDataStatistics());
     }
 
     /**
@@ -181,11 +147,11 @@ public class BloombergHistoricalTimeSeriesProvider extends AbstractHistoricalTim
      * 
      * @param bloombergConnector the bloomberg connector, not null
      * @param statistics the statistics, not null
-     * @param authenticationOption the authentication option, null represent NO_AUTH,  user|none|app=<app>|dir=<property> (default: none)");
+     * @param applicationName the bpipe application name if applicable
      * @param reAuthorizationScheduleTime the identity re authorization schedule time in hours
      */
-    public BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector, BloombergReferenceDataStatistics statistics, String authenticationOption, double reAuthorizationScheduleTime) {
-      super(bloombergConnector, BloombergConstants.REF_DATA_SVC_NAME, authenticationOption, reAuthorizationScheduleTime);
+    BloombergHistoricalDataRequestService(BloombergConnector bloombergConnector, BloombergReferenceDataStatistics statistics) {
+      super(bloombergConnector, BloombergConstants.REF_DATA_SVC_NAME);
       ArgumentChecker.notNull(statistics, "statistics");
       _statistics = statistics;
     }
@@ -422,7 +388,8 @@ public class BloombergHistoricalTimeSeriesProvider extends AbstractHistoricalTim
               int numValues = eidData.numValues();
               for (int i = 0; i < numValues; i++) {
                 try {
-                  eids.add(String.format("%s:%d", BloombergConstants.BLOOMBERG_DATA_SOURCE_NAME, eidData.getValueAsInt32(i)));
+                  int eid = eidData.getValueAsInt32(i);
+                  eids.add(BloombergPermissions.createEidPermissionString(eid));
                 } catch (Exception ex) {
                   getLogger().warn("Error extracting EID from {} for security:{}", eidData, identifiers);
                 }

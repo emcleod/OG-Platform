@@ -16,6 +16,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.fudgemsg.FudgeField;
 import org.fudgemsg.FudgeMsg;
+import org.fudgemsg.mapping.FudgeDeserializer;
 import org.slf4j.Logger;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.ZoneOffset;
@@ -24,6 +25,7 @@ import org.threeten.bp.format.DateTimeParseException;
 
 import com.opengamma.OpenGammaRuntimeException;
 import com.opengamma.bbg.BloombergConstants;
+import com.opengamma.bbg.BloombergPermissions;
 import com.opengamma.bbg.referencedata.ReferenceDataProvider;
 import com.opengamma.bbg.security.BloombergSecurityProvider;
 import com.opengamma.bbg.util.BloombergDataUtils;
@@ -36,6 +38,7 @@ import com.opengamma.id.ExternalId;
 import com.opengamma.id.ExternalIdBundle;
 import com.opengamma.master.security.ManageableSecurity;
 import com.opengamma.util.ArgumentChecker;
+import com.opengamma.util.fudgemsg.OpenGammaFudgeContext;
 import com.opengamma.util.time.DateUtils;
 import com.opengamma.util.time.Expiry;
 import com.opengamma.util.time.ExpiryAccuracy;
@@ -57,6 +60,8 @@ public abstract class SecurityLoader {
    * The security type.
    */
   private final SecurityType _securityType;
+
+  private final FudgeDeserializer _fudgeDeserializer = new FudgeDeserializer(OpenGammaFudgeContext.getInstance());
   /**
    * Creates an instance.
    * @param logger  the logger, not null
@@ -135,9 +140,11 @@ public abstract class SecurityLoader {
           String eidDataName = BloombergConstants.EID_DATA.toString();
           if (fieldData.hasField(eidDataName)) {
             for (FudgeField fudgeField : fieldData.getAllByName(eidDataName)) {
-              Object eidValue = fudgeField.getValue();
-              if (eidValue instanceof Integer) {
-                security.getPermissions().add(String.format("%s:%d", BloombergConstants.BLOOMBERG_DATA_SOURCE_NAME, (int) eidValue));
+              try {
+                Integer eidValue = _fudgeDeserializer.fieldValueToObject(Integer.class, fudgeField);
+                security.getRequiredPermissions().add(BloombergPermissions.createEidPermissionString((int) eidValue));
+              } catch (Exception ex) {
+                _logger.warn("Error converting EID to Integer");
               }
             }
           }

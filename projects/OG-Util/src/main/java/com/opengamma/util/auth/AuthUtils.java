@@ -5,9 +5,16 @@
  */
 package com.opengamma.util.auth;
 
+import java.util.Set;
+
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.authz.Permission;
+import org.apache.shiro.authz.permission.PermissionResolver;
 import org.apache.shiro.subject.Subject;
+
+import com.opengamma.util.ArgumentChecker;
 
 /**
  * Main entry point to the authentication and authorization system.
@@ -16,6 +23,34 @@ import org.apache.shiro.subject.Subject;
  */
 public final class AuthUtils extends SecurityUtils {
 
+  /**
+   * The singleton permission resolver.
+   */
+  private static final ShiroPermissionResolver s_permissionResolver = new ShiroPermissionResolver();
+
+  /**
+   * Restricted constructor.
+   */
+  private AuthUtils() {
+  }
+
+  //-------------------------------------------------------------------------
+  /**
+   * Returns the {@code PermissionResolver} that creates authorization {@code Permission} instances.
+   * <p>
+   * The authorization system is based on {@link Permission} instances.
+   * A {@link PermissionResolver} is used as a factory to create {@code Permission} instances.
+   * <p>
+   * The permission resolver returned here is a singleton that provides the ability
+   * to switch the permission implementation based on a prefix.
+   *
+   * @return the singleton {@code PermissionResolver}, not null
+   */
+  public static ShiroPermissionResolver getPermissionResolver() {
+    return s_permissionResolver;
+  }
+
+  //-------------------------------------------------------------------------
   /**
    * Initializes the authentication and authorization system to permissive mode.
    * Permissive mode has a logged on user with all permissions granted.
@@ -66,6 +101,31 @@ public final class AuthUtils extends SecurityUtils {
    */
   public static String getUserName() {
     return (String) SecurityUtils.getSubject().getPrincipal();
+  }
+
+  //-------------------------------------------------------------------------
+  /**
+   * Checks that the user has all the permissions necessary to see the entity.
+   * 
+   * @param permissionable  the entity to be checked, not null
+   * @return true if permitted
+   */
+  public static boolean isPermitted(Permissionable permissionable) {
+    ArgumentChecker.notNull(permissionable, "entity");
+    Set<Permission> requiredPermissions = AuthUtils.getPermissionResolver().resolvePermissions(permissionable.getRequiredPermissions());
+    return AuthUtils.getSubject().isPermittedAll(requiredPermissions);
+  }
+
+  /**
+   * Checks that the user has all the permissions necessary to see the entity.
+   * 
+   * @param permissionable  the entity to be checked, not null
+   * @throws AuthorizationException if the user does not have permission
+   */
+  public static void checkPermissions(Permissionable permissionable) {
+    ArgumentChecker.notNull(permissionable, "entity");
+    Set<Permission> requiredPermissions = AuthUtils.getPermissionResolver().resolvePermissions(permissionable.getRequiredPermissions());
+    AuthUtils.getSubject().checkPermissions(requiredPermissions);
   }
 
 }

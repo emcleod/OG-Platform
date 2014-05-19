@@ -32,17 +32,24 @@ public class RemotePermissionCheckProvider extends AbstractRemoteClient implemen
     super(baseUri);
   }
 
+  //-------------------------------------------------------------------------
+  @Override
+  public boolean isPermitted(ExternalIdBundle userIdBundle, String ipAddress, String requestedPermission) {
+    PermissionCheckProviderRequest request = PermissionCheckProviderRequest.createGet(userIdBundle, ipAddress, requestedPermission);
+    PermissionCheckProviderResult holderResult = isPermitted(request);
+    return holderResult.isPermitted(requestedPermission);
+  }
+
   @Override
   public Map<String, Boolean> isPermitted(ExternalIdBundle userIdBundle, String ipAddress, Set<String> requestedPermissions) {
     PermissionCheckProviderRequest request = PermissionCheckProviderRequest.createGet(userIdBundle, ipAddress, requestedPermissions);
     PermissionCheckProviderResult permissionResult = isPermitted(request);
-    return permissionResult.getPermissionCheckResult();
+    return permissionResult.getCheckedPermissions();
   }
 
   @Override
   public PermissionCheckProviderResult isPermitted(PermissionCheckProviderRequest request) {
     ArgumentChecker.notNull(request, "request");
-
     URI uri = DataPermissionCheckProviderResource.uriGet(getBaseUri());
     return accessRemote(uri).post(PermissionCheckProviderResult.class, request);
   }

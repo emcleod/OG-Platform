@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.core.io.Resource;
@@ -36,7 +35,7 @@ public class ComponentConfigPropertiesLoader extends AbstractComponentConfigLoad
    * @param logger  the logger, not null
    * @param properties  the properties being built up, not null
    */
-  public ComponentConfigPropertiesLoader(ComponentLogger logger, ConcurrentMap<String, String> properties) {
+  public ComponentConfigPropertiesLoader(ComponentLogger logger, ConfigProperties properties) {
     super(logger, properties);
   }
 
@@ -46,7 +45,7 @@ public class ComponentConfigPropertiesLoader extends AbstractComponentConfigLoad
    * 
    * @param resource  the config resource to load, not null
    * @param depth  the depth of the properties file, used for logging
-   * @return the combined set of properties, not null
+   * @return the next configuration file to load, null if not specified
    * @throws ComponentConfigException if the resource cannot be loaded
    */
   public String load(final Resource resource, final int depth) {
@@ -62,7 +61,7 @@ public class ComponentConfigPropertiesLoader extends AbstractComponentConfigLoad
    * 
    * @param resource  the config resource to load, not null
    * @param depth  the depth of the properties file, used for logging
-   * @return the combined set of properties, not null
+   * @return the next configuration file to load, null if not specified
    * @throws ComponentConfigException if the resource cannot be loaded
    */
   private String doLoad(final Resource resource, final int depth) {
@@ -89,16 +88,16 @@ public class ComponentConfigPropertiesLoader extends AbstractComponentConfigLoad
       }
       
       // resolve ${} references
-      value = resolveProperty(value, lineNum);
+      ConfigProperty resolved = getProperties().resolveProperty(key, value, lineNum);
       
       // handle includes
       if (key.equals(ComponentManager.MANAGER_INCLUDE)) {
-        handleInclude(resource, value, depth);
+        handleInclude(resource, resolved.getValue(), depth);
       } else {
         // store property
-        fileProperties.put(key, value);
+        fileProperties.put(key, resolved.getValue());
         if (key.equals(ComponentManager.MANAGER_NEXT_FILE) == false) {
-          getProperties().putIfAbsent(key, value);  // first definition wins
+          getProperties().addIfAbsent(resolved);  // first definition wins
         }
       }
     }

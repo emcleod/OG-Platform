@@ -21,10 +21,17 @@ import com.opengamma.provider.permission.PermissionCheckProviderResult;
 public abstract class AbstractPermissionCheckProvider implements PermissionCheckProvider {
 
   @Override
+  public boolean isPermitted(ExternalIdBundle userIdBundle, String ipAddress, String requestedPermission) {
+    PermissionCheckProviderRequest request = PermissionCheckProviderRequest.createGet(userIdBundle, ipAddress, requestedPermission);
+    PermissionCheckProviderResult holderResult = isPermitted(request);
+    return holderResult.isPermitted(requestedPermission);
+  }
+
+  @Override
   public Map<String, Boolean> isPermitted(ExternalIdBundle userIdBundle, String ipAddress, Set<String> requestedPermissions) {
     PermissionCheckProviderRequest request = PermissionCheckProviderRequest.createGet(userIdBundle, ipAddress, requestedPermissions);
     PermissionCheckProviderResult holderResult = isPermitted(request);
-    return holderResult.getPermissionCheckResult();
+    return holderResult.getCheckedPermissions();
   }
 
 }

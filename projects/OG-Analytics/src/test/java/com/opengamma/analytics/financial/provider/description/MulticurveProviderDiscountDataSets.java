@@ -144,7 +144,7 @@ public class MulticurveProviderDiscountDataSets {
   private static final IndexON FEDFUND = IndexONMaster.getInstance().getIndex("FED FUND");
   private static final IndexON BRAZIL_CDI = IndexONMaster.getInstance().getIndex("CDI");
 
-  private static final String NAME_EUR_PRICE_INDEX = "Euro HICP x";
+  private static final String NAME_EUR_PRICE_INDEX = "EUR HICP";
   private static final IndexPrice PRICE_INDEX_EUR = new IndexPrice(NAME_EUR_PRICE_INDEX, Currency.EUR);
   private static final double[] INDEX_VALUE_EUR = new double[] {113.11, 113.10, 115.12, 123.23, 133.33, 155.55, 175.55, 195.55 }; // May11, June11, 1Y, 5Y, 10Y, 20Y
   private static final double[] TIME_VALUE_EUR = new double[] {-4.0 / 12.0, -2.0 / 12.0, 9.0 / 12.0, 4.0 + 9.0 / 12.0, 9.0 + 9.0 / 12.0, 19.0 + 9.0 / 12.0, 29.0 + 9.0 / 12.0, 39.0 + 9.0 / 12.0 };
@@ -159,7 +159,7 @@ public class MulticurveProviderDiscountDataSets {
   private static final PriceIndexCurve PRICE_INDEX_CURVE_GBP = new PriceIndexCurve(CURVE_GBP);
 
   private static final String NAME_USD_PRICE_INDEX = "US CPI-U";
-  private static final IndexPrice PRICE_INDEX_USD = new IndexPrice(NAME_USD_PRICE_INDEX, Currency.EUR);
+  private static final IndexPrice PRICE_INDEX_USD = new IndexPrice(NAME_USD_PRICE_INDEX, Currency.USD);
   private static final double[] INDEX_VALUE_USD = new double[] {225.964, 225.722, 230.0, 251.1, 280.2, 452.7 }; // May11, June11, 1Y, 5Y, 10Y, 20Y, 50Y
   private static final double[] TIME_VALUE_USD = new double[] {-8.0 / 12.0, 4.0 / 12.0, 4.0 + 4.0 / 12.0, 9.0 + 4.0 / 12.0, 19.0 + 4.0 / 12.0, 49.0 + 4.0 / 12.0 };
   private static final InterpolatedDoublesCurve CURVE_USD = InterpolatedDoublesCurve.from(TIME_VALUE_USD, INDEX_VALUE_USD, new LinearInterpolator1D(), NAME_USD_PRICE_INDEX);
@@ -455,7 +455,7 @@ public class MulticurveProviderDiscountDataSets {
    * @return The provider.
    */
   public static MulticurveProviderDiscount createMulticurveEUR() {
-    MulticurveProviderDiscount provideurEUR = new MulticurveProviderDiscount();
+    final MulticurveProviderDiscount provideurEUR = new MulticurveProviderDiscount();
     provideurEUR.setCurve(Currency.EUR, EUR_DSC);
     provideurEUR.setCurve(EONIA, EUR_DSC);
     provideurEUR.setCurve(EURIBOR3M, EUR_FWD3);

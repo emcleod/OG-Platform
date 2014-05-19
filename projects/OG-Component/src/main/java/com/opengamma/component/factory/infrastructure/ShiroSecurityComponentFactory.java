@@ -12,6 +12,7 @@ import java.util.Map;
 import org.apache.shiro.authc.credential.DefaultPasswordService;
 import org.apache.shiro.authc.credential.PasswordMatcher;
 import org.apache.shiro.authc.credential.PasswordService;
+import org.apache.shiro.authz.ModularRealmAuthorizer;
 import org.apache.shiro.cache.MemoryConstrainedCacheManager;
 import org.apache.shiro.crypto.hash.DefaultHashService;
 import org.apache.shiro.mgt.SecurityManager;
@@ -107,7 +108,7 @@ public class ShiroSecurityComponentFactory extends AbstractComponentFactory {
   /**
    * Initializes the password service via {@code createPasswordService}.
    * 
-   * @param repo the component repository, not null
+   * @param repo  the component repository, not null
    * @return the password service, not null
    */
   protected PasswordService initPasswordService(ComponentRepository repo) {
@@ -120,7 +121,7 @@ public class ShiroSecurityComponentFactory extends AbstractComponentFactory {
   /**
    * Creates the password service without registering it.
    * 
-   * @param repo the component repository, only used to register secondary items like lifecycle, not null
+   * @param repo  the component repository, only used to register secondary items like lifecycle, not null
    * @return the password service, not null
    */
   protected PasswordService createPasswordService(ComponentRepository repo) {
@@ -138,13 +139,13 @@ public class ShiroSecurityComponentFactory extends AbstractComponentFactory {
   /**
    * Initializes the security manager via {@code createSecurityManager}.
    * 
-   * @param repo the component repository, not null
+   * @param repo  the component repository, not null
    * @param pwService  the password service, not null
    * @return the security manager, not null
    */
   protected SecurityManager initSecurityManager(ComponentRepository repo, PasswordService pwService) throws IOException {
     SecurityManager securityManager = createSecurityManager(repo, pwService);
-    final ComponentInfo info = new ComponentInfo(SecurityManager.class, getClassifier());
+    ComponentInfo info = new ComponentInfo(SecurityManager.class, getClassifier());
     repo.registerComponent(info, securityManager);
     repo.registerLifecycleStop(securityManager, "destroy");
     return securityManager;
@@ -153,7 +154,7 @@ public class ShiroSecurityComponentFactory extends AbstractComponentFactory {
   /**
    * Creates the security manager without registering it.
    * 
-   * @param repo the component repository, only used to register secondary items like lifecycle, not null
+   * @param repo  the component repository, only used to register secondary items like lifecycle, not null
    * @param pwService  the password service, not null
    * @return the security manager, not null
    */
@@ -174,13 +175,15 @@ public class ShiroSecurityComponentFactory extends AbstractComponentFactory {
     DefaultWebSecurityManager sm = new DefaultWebSecurityManager();
     sm.setRealm(realm);
     sm.setCacheManager(new MemoryConstrainedCacheManager());
+    // unchecked cast to cause RuntimeException if Apache Shiro changed
+    ((ModularRealmAuthorizer) sm.getAuthorizer()).setPermissionResolver(AuthUtils.getPermissionResolver());
     return sm;
   }
 
   /**
    * Initializes the permissive security manager.
    * 
-   * @param repo the component repository, not null
+   * @param repo  the component repository, not null
    * @return the security manager, not null
    */
   protected SecurityManager initPermissiveSecurityManager(ComponentRepository repo) {

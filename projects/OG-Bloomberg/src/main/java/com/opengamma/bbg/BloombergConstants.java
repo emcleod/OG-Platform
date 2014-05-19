@@ -276,6 +276,8 @@ public final class BloombergConstants {
   public static final Name ERROR_INFO = new Name("errorInfo");
   public static final Name REASON = new Name("reason");
   public static final Name CATEGORY = new Name("category");
+  public static final Name CODE = new Name("code");
+  public static final Name MESSAGE = new Name("message");
   public static final Name DESCRIPTION = new Name("description");
   public static final Name AUTHORIZATION_SUCCESS = new Name("AuthorizationSuccess");
   public static final Name AUTHORIZATION_FAILURE = new Name("AuthorizationFailure");
@@ -358,5 +360,14 @@ public final class BloombergConstants {
       MARKET_SECTOR_MTGE,
       MARKET_SECTOR_MUNI,
       MARKET_SECTOR_PREFERRED);
+
+  /**
+   * Bpipe application authentication  prefix
+   */
+  public static final String AUTH_APP_PREFIX = "AuthenticationMode=APPLICATION_ONLY;ApplicationAuthenticationType=APPNAME_AND_KEY;ApplicationName=";
+  /**
+   * The name of live data entitlement field
+   */
+  public static final String EID_LIVE_DATA_FIELD = "EID";
 
 }

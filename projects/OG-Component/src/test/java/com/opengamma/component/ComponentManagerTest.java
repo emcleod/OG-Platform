@@ -8,6 +8,8 @@ package com.opengamma.component;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
+import java.util.List;
+
 import org.testng.annotations.Test;
 
 import com.opengamma.util.test.TestGroup;
@@ -27,8 +29,8 @@ public class ComponentManagerTest {
     assertEquals(3, mgr.getConfigIni().getGroups().size());
     assertEquals(1, mgr.getConfigIni().getGroup("global").size());
     assertEquals(3, mgr.getConfigIni().getGroup("one").size());
-    assertEquals(4, mgr.getConfigIni().getGroup("two").size());
-    assertEquals("one", mgr.getConfigIni().getGroup("one").get("alpha"));
+    assertEquals(5, mgr.getConfigIni().getGroup("two").size());
+    assertEquals("one", mgr.getConfigIni().getGroup("one").getValue("alpha"));
   }
 
   @Test
@@ -40,8 +42,10 @@ public class ComponentManagerTest {
     assertEquals(3, mgr.getConfigIni().getGroups().size());
     assertEquals(1, mgr.getConfigIni().getGroup("global").size());
     assertEquals(3, mgr.getConfigIni().getGroup("one").size());
-    assertEquals(4, mgr.getConfigIni().getGroup("two").size());
-    assertEquals("two", mgr.getConfigIni().getGroup("one").get("alpha"));
+    assertEquals(5, mgr.getConfigIni().getGroup("two").size());
+    assertEquals("two", mgr.getConfigIni().getGroup("one").getValue("alpha"));
+    List<?> list = mgr.getRepository().getInstance(List.class, "two");
+    assertEquals(3, list.size());
   }
 
   //-------------------------------------------------------------------------

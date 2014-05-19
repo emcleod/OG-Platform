@@ -29,6 +29,8 @@ public class ExternalSchemesTest {
     assertEquals("RIC", ExternalSchemes.RIC.getName());
     assertEquals("MARKIT_RED_CODE", ExternalSchemes.MARKIT_RED_CODE.getName());
     assertEquals("ISDA", ExternalSchemes.ISDA.getName());
+    assertEquals("BLOOMBERG_UUID", ExternalSchemes.BLOOMBERG_UUID.getName());
+    assertEquals("BLOOMBERG_EMRSID", ExternalSchemes.BLOOMBERG_EMRSID.getName());
   }
 
   public void test_identifiers() {
@@ -41,6 +43,9 @@ public class ExternalSchemesTest {
     assertEquals(ExternalId.of("RIC", "A"), ExternalSchemes.ricSecurityId("A"));
     assertEquals(ExternalId.of("MARKIT_RED_CODE", "A"), ExternalSchemes.markItRedCode("A"));
     assertEquals(ExternalId.of("ISDA", "A"), ExternalSchemes.isda("A"));
+    assertEquals(ExternalId.of("WINDOWS_USER_ID", "A"), ExternalSchemes.windowsUserId("A"));
+    assertEquals(ExternalId.of("BLOOMBERG_UUID", "A"), ExternalSchemes.bloombergUuidUserId("A"));
+    assertEquals(ExternalId.of("BLOOMBERG_EMRSID", "A"), ExternalSchemes.bloombergEmrsUserId("A"));
   }
 
   @Test(expectedExceptions = IllegalArgumentException.class)
@@ -61,6 +66,16 @@ public class ExternalSchemesTest {
   @Test(expectedExceptions = IllegalArgumentException.class)
   public void test_bloombergBuid_null() {
     ExternalSchemes.bloombergBuidSecurityId(null);
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void test_bloombergUuid_null() {
+    ExternalSchemes.bloombergUuidUserId(null);
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void test_bloombergEmrsid_null() {
+    ExternalSchemes.bloombergEmrsUserId(null);
   }
 
   @Test(expectedExceptions = IllegalArgumentException.class)
