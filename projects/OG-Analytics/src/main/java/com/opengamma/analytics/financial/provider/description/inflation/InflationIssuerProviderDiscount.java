@@ -8,10 +8,13 @@ package com.opengamma.analytics.financial.provider.description.inflation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.opengamma.OpenGammaRuntimeException;
 import com.opengamma.analytics.financial.forex.method.FXMatrix;
@@ -35,7 +38,7 @@ import com.opengamma.util.tuple.Pair;
  * The forward rate are computed as the ratio of discount factors stored in YieldAndDiscountCurve.
  */
 public class InflationIssuerProviderDiscount implements InflationIssuerProviderInterface {
-
+  private static final Logger s_logger = LoggerFactory.getLogger(InflationIssuerProviderDiscount.class);
   /**
    * The multicurve provider.
    */
@@ -172,6 +175,20 @@ public class InflationIssuerProviderDiscount implements InflationIssuerProviderI
   }
 
   @Override
+  public double getDiscountFactor(final LegalEntity issuer, final Double time) {
+    for (final Map.Entry<Pair<Object, LegalEntityFilter<LegalEntity>>, YieldAndDiscountCurve> entry : _issuerCurves.entrySet()) {
+      if (entry.getKey().getFirst().equals(entry.getKey().getSecond().getFilteredData(issuer))) {
+        return entry.getValue().getDiscountFactor(time);
+      }
+    }
+    s_logger.error("Could not find issuer discounting curve for {}. There are {} curve available", issuer, _issuerCurves.size());
+    for (final Map.Entry<Pair<Object, LegalEntityFilter<LegalEntity>>, YieldAndDiscountCurve> entry : _issuerCurves.entrySet()) {
+      s_logger.error("matching key = {}, filter {} matches = {}", entry.getKey().getFirst(), issuer, entry.getKey().getSecond().getFilteredData(issuer));
+    }
+    throw new IllegalArgumentException("Issuer discounting curve not found for " + issuer);
+  }
+
+  @Override
   public Set<Pair<Object, LegalEntityFilter<LegalEntity>>> getIssuers() {
     return _issuerCurves.keySet();
   }
@@ -207,6 +224,50 @@ public class InflationIssuerProviderDiscount implements InflationIssuerProviderI
       }
     }
     throw new IllegalArgumentException("Could not get curve for " + issuer);
+  }
+
+  /**
+   * Gets the curve(with a name) for an issuer .
+   * @param name The name
+   * @return The curve, null if not found
+   */
+  public YieldAndDiscountCurve getCurve(final String name) {
+    for (final Entry<String, YieldAndDiscountCurve> entry : _issuerCurvesNames.entrySet()) {
+      if (entry.getKey().equals(name)) {
+        return entry.getValue();
+      }
+    }
+    throw new IllegalArgumentException("Could not get curve for " + name);
+  }
+
+  @Override
+  public Integer getNumberOfParameters(final String name) {
+    final PriceIndexCurve inflationCurve = _inflationProvider.getCurve(name);
+    final YieldAndDiscountCurve curve = _inflationProvider.getMulticurveProvider().getCurve(name);
+    final YieldAndDiscountCurve issuerCurve = _issuerCurvesNames.get(name);
+    if (inflationCurve != null) {
+      return inflationCurve.getNumberOfParameters();
+    } else if (curve != null) {
+      return curve.getNumberOfParameters();
+    } else if (issuerCurve != null) {
+      return issuerCurve.getNumberOfParameters();
+    }
+    throw new UnsupportedOperationException("Cannot return the number of parameter for a null curve");
+  }
+
+  @Override
+  public List<String> getUnderlyingCurvesNames(final String name) {
+    final PriceIndexCurve inflationCurve = _inflationProvider.getCurve(name);
+    final YieldAndDiscountCurve curve = _inflationProvider.getMulticurveProvider().getCurve(name);
+    final YieldAndDiscountCurve issuerCurve = _issuerCurvesNames.get(name);
+    if (inflationCurve != null) {
+      return inflationCurve.getUnderlyingCurvesNames();
+    } else if (curve != null) {
+      return curve.getUnderlyingCurvesNames();
+    } else if (issuerCurve != null) {
+      return issuerCurve.getUnderlyingCurvesNames();
+    }
+    throw new UnsupportedOperationException("Cannot return the number of parameter for a null curve");
   }
 
   //     =====     Methods related to InflationProvider     =====
@@ -424,6 +485,18 @@ public class InflationIssuerProviderDiscount implements InflationIssuerProviderI
 
   //     =====     Convenience methods     =====
 
+  /**
+   * Replaces an issuer curve.
+   * @param ic The key of the curve to replace
+   * @param replacement The replacement curve
+   * @return A new provider with the curve replaced.
+   */
+  public InflationIssuerProviderDiscount withIssuerCurve(final Pair<Object, LegalEntityFilter<LegalEntity>> ic, final YieldAndDiscountCurve replacement) {
+    final Map<Pair<Object, LegalEntityFilter<LegalEntity>>, YieldAndDiscountCurve> newIssuerCurves = new LinkedHashMap<>(_issuerCurves);
+    newIssuerCurves.put(ic, replacement);
+    return new InflationIssuerProviderDiscount(_inflationProvider, newIssuerCurves);
+  }
+
   @Override
   public InflationProviderInterface withDiscountFactor(final Currency ccy, final Pair<Object, LegalEntityFilter<LegalEntity>> replacement) {
     return _inflationProvider.withDiscountFactor(ccy, _issuerCurves.get(replacement));
@@ -503,7 +576,21 @@ public class InflationIssuerProviderDiscount implements InflationIssuerProviderI
 
   @Override
   public double[] parameterInflationSensitivity(final String name, final List<DoublesPair> pointSensitivity) {
-    return _inflationProvider.parameterInflationSensitivity(name, pointSensitivity);
+    final YieldAndDiscountCurve curve = _issuerCurvesNames.get(name);
+    if (curve == null) {
+      return _inflationProvider.parameterInflationSensitivity(name, pointSensitivity);
+    }
+    final int nbParameters = curve.getNumberOfParameters();
+    final double[] result = new double[nbParameters];
+    if (pointSensitivity != null && pointSensitivity.size() > 0) {
+      for (final DoublesPair timeAndS : pointSensitivity) {
+        final double[] sensi1Point = curve.getInterestRateParameterSensitivity(timeAndS.getFirst());
+        for (int loopparam = 0; loopparam < nbParameters; loopparam++) {
+          result[loopparam] += timeAndS.getSecond() * sensi1Point[loopparam];
+        }
+      }
+    }
+    return result;
   }
 
 }

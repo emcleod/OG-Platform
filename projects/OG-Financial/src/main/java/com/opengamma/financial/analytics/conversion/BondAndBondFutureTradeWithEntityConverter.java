@@ -500,8 +500,8 @@ public class BondAndBondFutureTradeWithEntityConverter extends FinancialSecurity
           return BondCapitalIndexedSecurityDefinition.fromMonthly(priceIndex, monthLag, firstAccrualDate, baseCPI, firstCouponDate, maturityDate, paymentPeriod, rate, businessDay, settlementDays,
               calendar, dayCount, yieldConvention, isEOM, legalEntity);
         } else if ("Daily".equals(interpolationMethod)) {
-          return BondCapitalIndexedSecurityDefinition.fromMonthly(priceIndex, monthLag, firstAccrualDate, baseCPI, firstCouponDate, maturityDate, paymentPeriod, rate, businessDay, settlementDays,
-              calendar, dayCount, yieldConvention, isEOM, legalEntity);
+          return BondCapitalIndexedSecurityDefinition.fromInterpolation(priceIndex, monthLag, firstAccrualDate, baseCPI, maturityDate, paymentPeriod, 1.0, rate, businessDay, settlementDays, calendar,
+              dayCount, yieldConvention, isEOM, legalEntity);
         } else {
           throw new OpenGammaRuntimeException("Bond interpolation method is not valid");
         }
@@ -514,7 +514,7 @@ public class BondAndBondFutureTradeWithEntityConverter extends FinancialSecurity
    * @param bondFuture The bond future security
    * @return The bond future definition
    */
-  private BondFuturesSecurityDefinition getBondFuture(final BondFutureSecurity bondFuture) {
+  public BondFuturesSecurityDefinition getBondFuture(final BondFutureSecurity bondFuture) {
     final ZonedDateTime lastTradeDate = bondFuture.getExpiry().getExpiry();
     final ZonedDateTime firstNoticeDate = bondFuture.getFirstDeliveryDate();
     final ZonedDateTime lastNoticeDate = bondFuture.getLastDeliveryDate();

@@ -11,6 +11,7 @@ import org.threeten.bp.LocalDate;
 import org.threeten.bp.Period;
 
 import com.opengamma.OpenGammaRuntimeException;
+import com.opengamma.analytics.env.AnalyticsEnvironment;
 import com.opengamma.analytics.financial.instrument.InstrumentDefinition;
 import com.opengamma.analytics.financial.instrument.NotionalProvider;
 import com.opengamma.analytics.financial.instrument.annuity.AbstractAnnuityDefinitionBuilder.CouponStub;
@@ -18,6 +19,7 @@ import com.opengamma.analytics.financial.instrument.annuity.AdjustedDateParamete
 import com.opengamma.analytics.financial.instrument.annuity.AnnuityCouponFixedDefinition;
 import com.opengamma.analytics.financial.instrument.annuity.AnnuityCouponIborDefinition;
 import com.opengamma.analytics.financial.instrument.annuity.AnnuityDefinition;
+import com.opengamma.analytics.financial.instrument.annuity.CompoundingMethod;
 import com.opengamma.analytics.financial.instrument.annuity.FixedAnnuityDefinitionBuilder;
 import com.opengamma.analytics.financial.instrument.annuity.FloatingAnnuityDefinitionBuilder;
 import com.opengamma.analytics.financial.instrument.annuity.OffsetAdjustedDateParameters;
@@ -276,7 +278,7 @@ public class InterestRateSwapSecurityConverter extends FinancialSecurityVisitorA
     return new IndexON(
         floatLeg.getFloatingReferenceRateId().getValue(),
         floatLeg.getNotional().getCurrency(),
-        floatLeg.getDayCountConvention(),
+        onIndexConvention.getDayCount(),
         onIndexConvention.getPublicationLag());
   }
 
@@ -375,6 +377,8 @@ public class InterestRateSwapSecurityConverter extends FinancialSecurityVisitorA
       }
     }
 
+    CompoundingMethod compoundingMethod = leg.getCompoundingMethod();
+    
     return new FixedAnnuityDefinitionBuilder().
         payer(payer).
         currency(leg.getNotional().getCurrency()).
@@ -395,6 +399,7 @@ public class InterestRateSwapSecurityConverter extends FinancialSecurityVisitorA
         rate(fixedLeg.getRate().getInitialRate()).
         startStub(startStub).
         endStub(endStub).
+        compoundingMethod(compoundingMethod).
         build();
   }
 

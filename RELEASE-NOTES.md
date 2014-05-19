@@ -3,20 +3,168 @@ OpenGamma Platform 2.2 milestones
 
 These release notes cover changes from v2.1 to v2.2.
 
-
-Any tool implementations relying on PortfolioWriter, PortfolioReader will
-need refactoring due to changes made for PLAT-6304:
-
-PortfolioReader was renamed to PositionReader
-PortfolioWriter was renamed to PositionWriter
-PortfolioTool was simplified as per the JIRA above
-
 Upgrading from 2.1.0
 ====================
+
+To 2.2.0-M23
+------------
+
+* Bug
+    * [PLAT-6484] - Green screens for TRS fail due to bad field lookups
+    * [PLAT-6489] - NonVersionedRedisHistoricalTimeSeriesSource null pointer error
+    * [PLAT-6498] - Fix SQL server HTS database
+* New Feature
+    * [PLAT-6491] - Specify volatility surface shocks using the index of the expiry
+* Improvement
+    * [PLAT-6462] - Allow multiple war file locations to be merged dynamically
+    * [PLAT-6477] - ComponentRepository lookup for Foo:bar keys
+    * [PLAT-6480] - Result object should be able to be constructed with an Exception and a specific status
+    * [PLAT-6483] - Extend generics in ArgumentChecker
+    * [PLAT-6485] - Enhance Result model
+    * [PLAT-6487] - Remove line breaks and duplicates from FailureResult's message
+    * [PLAT-6495] - Better identification of web client IP address
+    * [PLAT-6499] - Enhance return of failures from PermissionCheckProvider
+    * [PLAT-6505] - Return permission denied for Bloomberg subscriptions
+    * [PLAT-6506] - Add additional result statuses
+    * [PLAT-6508] - Allow home page links to be dynamically extended
+* Task
+    * [PLAT-6490] - Add method to clone redis simulation source & change date
+    * [PLAT-6494] - Add equals and hashCode for Redis timeseries and simulation source
+
+
+To 2.2.0-M22
+------------
+* PLAT-6473 - Enhancing the security of startup required public and protected methods in og-component to change.
+  This affects code which should not be called by applications, as the application-facing API stays the same.
+
+* Bug
+    * [PLAT-6473] - Enhanced security in startup logging
+    * [PLAT-6474] - Metrics component factory JMX null check
+    * [PLAT-6475] - Handle property rename from permission to requiredPermission
+* Improvement
+    * [PLAT-6464] - Move @Config annotation from AbstractCurrencyMatrix to CurrencyMatrix
+* New Feature
+    * [PLAT-6297] - OG-Analytics: BondFutureOptionMargin: Black pricing method
+
+
+To 2.2.0-M21
+------------
+
+* PLAT-6443 Enhance component-based infrastructure factories
+Renamed factories:
+- com.opengamma.component.factory.master.DataSourceComponentFactory -> com.opengamma.component.factory.infrastructure.DataSourceComponentFactory
+- com.opengamma.component.factory.master.DbConnectorComponentFactory -> com.opengamma.component.factory.infrastructure.DbConnectorComponentFactory
+- com.opengamma.component.factory.master.DbManagementComponentFactory -> com.opengamma.component.factory.tool.DbManagementComponentFactory
+- com.opengamma.component.factory.infrastructure.JMSConnectorComponentFactory -> com.opengamma.component.factory.infrastructure.ActiveMqJmsConnectorComponentFactory
+- com.opengamma.component.factory.metric.MetricRepositoryFactory -> com.opengamma.component.factory.infrastructure.MetricsRepositoryComponentFactory
+
+- MBeanServerComponentFactory no longer has "cacheManager" parameter (CacheManager JMX now works automatically)
+- ActiveMqJmsConnectorComponentFactory no longer has "connectionFactory" parameter (no longer applicable)
+- DataSourceComponentFactory, DbConnectorComponentFactory, CacheManagerComponentFactory and ActiveMqJmsConnectorComponentFactory now
+support "classifierAliases" parameter, which may be a comma separated list
+- protected methods have changed names
+
+Common infrastructure files added:
+- common/common-metrics.ini
+- common/common-infra.ini
+- common/common-infra-full.ini
+- common/common-dbinfra-full.ini
+
+A standard fullstack ini file can use:
+#============================================================================
+MANAGER.INCLUDE = classpath:common/common-metrics.ini
+MANAGER.INCLUDE = classpath:common/common-infra-full.ini
+MANAGER.INCLUDE = classpath:common/common-dbinfra-full.ini
+MANAGER.INCLUDE = classpath:common/common-shiro.ini
+MANAGER.INCLUDE = classpath:common/common-dbmasters.ini
+
+#============================================================================
+
+* Bug
+    * [PLAT-6420] - CurveNodeConverter: FedFundsFutures use incorrect time series.
+    * [PLAT-6449] - ISDACDXAsSingleNameParallelCS01Function does not create pricingCDS consistently...
+    * [PLAT-6463] - ManageableMarketDataSnapshot.name does not allow nulls
+* Improvement
+    * [PLAT-6287] - CalendarSwapNode: change to use the DateSet config
+    * [PLAT-6431] - Make Bloomberg live market data server work for Bloomberg Bpipe server
+    * [PLAT-6435] - Better website error pages
+    * [PLAT-6443] - Enhance infrastructure component factories
+    * [PLAT-6454] - FixedSwapLegDetailsFormatter and FloatingSwapLegDetailsFormatter should use LocalDate.MIN/MAX instead of null to represent empty LocalDates
+    * [PLAT-6456] - Reduce dependencies of OG-Analytics
+    * [PLAT-6398] - Integrate user management with components
+* New Feature
+    * [PLAT-6317] - Bucketed PV01 for bonds
+* Task
+    * [PLAT-6266] - OG-Financial : integration of present value for linked bonds
+    * [PLAT-6436] - Add a failure status PERMISSION_DENIED
+    * [PLAT-6458] - Add an AnalyticsEnvironment to allow customisations
+* Sub-task
+    * [PLAT-6433] - Allow SessionProvider to open multiple service.
+
+
+To 2.2.0-M20
+------------
+
+* ConfigLink API has changed - of method renamed to resolved/resolvable in order to
+differentiate between the different types of links
+* SecurityLink API has changed - of method renamed to resolved/resolvable in order to
+differentiate between the different types of links
+* ConventionLink API has changed - of method renamed to resolved/resolvable in order to
+differentiate between the different types of links
+* SnapshotLink has been added to allow access to different types of snapshots
+* Snapshot database schema has been updated to support different types of snapshots
+* SnapshotSource and SnapshotMaster have been updated to allow for searching of different
+types of snapshots. These changes should be backwards compatible though some methods
+have been deprecated.
+
+* Bug
+    * [PLAT-5845] - Bloomberg security type resolver does not as for SECURITY_TYP2
+    * [PLAT-6100] - Deployment template doesn't work with windows
+    * [PLAT-6224] - Deployment template includes a pom file in "lib" folder
+    * [PLAT-6408] - Values not being passed correctly between job items
+    * [PLAT-6409] - trade.setProviderId does not appear to be persisted in RemotePositionMaster
+    * [PLAT-6412] - CouponNotionalVisitor does not support definitions of type CouponONArithmeticAverageDefinition
+    * [PLAT-6413] - AnnuityAccrualDatesVisitor does not support definitions of type CouponONSpreadDefinition
+    * [PLAT-6414] - OG-Analytics: SwapFuturesPriceDeliverableSecurityHullWhiteMethod - incorrect priceCurveSensitivity
+    * [PLAT-6415] - Wrong calculation of Interest/Payment Amount in ZCS fixed leg
+    * [PLAT-6417] - Occasional test failure in DependencyGraphTraceBuilder
+    * [PLAT-6421] - NonVersionedRedisConfigSource doesn't handle missing configs correctly
+    * [PLAT-6423] - MultiFileConfigSaver can't handle configs with slashes in the names
+    * [PLAT-6426] - Change yearly index naming convention from 1Y to 12M
+    * [PLAT-6432] - Bloomberg ticks being lost
+* Improvement
+    * [PLAT-5842] - Return zeroes for PV01 and YCNS in the case where there is no sensitivity to a particular curve
+    * [PLAT-6175] - Move equity option market value requirement into the functions that need it.
+    * [PLAT-6375] - jacobian matrix for exogenous curves are not used.
+    * [PLAT-6377] - OG-Analytics : for curve construction test : declare as private all public function which are not a test
+    * [PLAT-6407] - OG-Analytics: FuturesTransactionDefinition add referencePrice method
+    * [PLAT-6422] - Implement NonVersionedRedisHistoricalTimeSeriesSource methods to satisfy engine
+    * [PLAT-6424] - Modify ConventionMasterInitializer to add the ability to add securities
+    * [PLAT-6425] - ForexDefinition does not provide useful feedback in failure cases
+* New Feature
+    * [PLAT-6176] - Function that provides cashflow information for bonds
+    * [PLAT-6344] - Pricing and risk functions for TRS
+    * [PLAT-6345] - Add example TRS views and relevant configs to examples-simulated
+    * [PLAT-6361] - add a getInstance() in BondCapitalIndexedTransactionDiscountingMethod
+    * [PLAT-6362] - add a PresentValueCurveSensitivityDiscountingInflationCalculator using a curve object with issuer 
+    * [PLAT-6368] - finite difference calculator bumping both issuer and inflation curve
+* Task
+    * [PLAT-6181] - Tool to take online/hot backup of HSQL database
+    * [PLAT-6383] - Add support for fixed payments to coupon notional visitor
+    * [PLAT-6384] - Correct expiry convention for TWSE
+    * [PLAT-6404] - Implement PermissionCheckProvider 
+    * [PLAT-6406] - Add value theta and vega functions for equity future option
+    * [PLAT-6411] - Fix SABR views in examples
 
 
 To 2.2.0-M19
 ------------
+
+* Any tool implementations relying on PortfolioWriter, PortfolioReader will
+need refactoring due to changes made for PLAT-6304:
+    * PortfolioReader was renamed to PositionReader
+    * PortfolioWriter was renamed to PositionWriter
+    * PortfolioTool was simplified as per the JIRA above
 
 * Security manager and user database
     * Various minor fixes to M18 release

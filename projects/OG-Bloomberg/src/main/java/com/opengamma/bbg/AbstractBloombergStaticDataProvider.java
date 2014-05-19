@@ -5,38 +5,31 @@
  */
 package com.opengamma.bbg;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.context.Lifecycle;
 
 import com.bloomberglp.blpapi.CorrelationID;
 import com.bloomberglp.blpapi.Element;
 import com.bloomberglp.blpapi.Event;
-import com.bloomberglp.blpapi.EventQueue;
 import com.bloomberglp.blpapi.Identity;
 import com.bloomberglp.blpapi.Message;
 import com.bloomberglp.blpapi.MessageIterator;
-import com.bloomberglp.blpapi.Name;
 import com.bloomberglp.blpapi.Request;
 import com.bloomberglp.blpapi.Service;
 import com.bloomberglp.blpapi.Session;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
 import com.opengamma.OpenGammaRuntimeException;
+import com.opengamma.bbg.permission.BloombergBpipeApplicationUserIdentityProvider;
 import com.opengamma.livedata.ConnectionUnavailableException;
 import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.TerminatableJob;
@@ -46,35 +39,14 @@ import com.opengamma.util.TerminatableJob;
  */
 public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
 
-  private static final int WAIT_TIME_MS = 10 * 1000; // 10 seconds
-  private static final Name TOKEN_SUCCESS = Name.getName("TokenGenerationSuccess");
-  private static final Name TOKEN_ELEMENT = Name.getName("token");
-  private static final String AUTH_SERVICE = "//blp/apiauth";
-  private static final Name AUTHORIZATION_SUCCESSS = Name.getName("AuthorizationSuccess");
-
-  private static final String AUTH_USER = "AuthenticationType=OS_LOGON";
-  private static final String AUTH_APP_PREFIX = "AuthenticationMode=APPLICATION_ONLY;ApplicationAuthenticationType=APPNAME_AND_KEY;ApplicationName=";
-  private static final String AUTH_DIR_PREFIX = "AuthenticationType=DIRECTORY_SERVICE;DirSvcPropertyName=";
-  private static final String AUTH_OPTION_NONE = "none";
-  private static final String AUTH_OPTION_USER = "user";
-  private static final String AUTH_OPTION_APP = "app=";
-  private static final String AUTH_OPTION_DIR = "dir=";
-
-  /**
-   * Default shedule time in hours to re authorize bpipe user with Bloomberg
-   */
-  public static final int RE_AUTHORIZATION_SCHEDULE_TIME = 24;
-
   /**
    * The Bloomberg session options.
    */
   private final BloombergConnector _bloombergConnector;
-
   /**
    * The provider of correlation identifiers.
    */
   private final AtomicLong _nextCorrelationId = new AtomicLong(1L);
-
   /**
    * Result futures
    */
@@ -91,77 +63,46 @@ public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
    * The thread hosting the event processor.
    */
   private Thread _thread;
-
   /**
    * Manages the Bloomberg session and service.
    */
   private final SessionProvider _sessionProvider;
-
   /**
-   * The authentication option, null represents NO_AUTH
+   * The service name
    */
-  private final String _authenticationOption;
-
+  private final String _serviceName;
   /**
-   * The bpipe system identity user
+   * Whether authentication is needed.
    */
-  private volatile Identity _systemUserIdentity;
-
+  private final boolean _requiresAuthentication;
   /**
-   * The identity re authorization schedule time in hours
-   * <p>
-   * Defaults to 24hrs if not set
+   * The bpipe applicatiion user identity.
    */
-
-  private final int _reAuthorizationScheduleTime;
-
-  /**
-   * Scheduler to check against system identity every 24hrs
-   */
-  private ScheduledExecutorService _identityScheduler;
-  private ScheduledFuture<?> _identityCheckTask;
+  private volatile Identity _applicationIdentity;
 
   /**
    * Creates an instance.
    * 
-   * @param bloombergConnector the Bloomberg connector, not null
-   * @param serviceName The Bloomberg service to start
-   * @param authenticationOption the authentication option, null is NO_AUTH
-   * <p>
-   * user|none|app=<app>|dir=<property> (default: none)");
-   * @param reAuthorizationScheduleTime the identity re authorization schedule time in hours
+   * @param bloombergConnector  the Bloomberg connector, not null
+   * @param serviceName  the Bloomberg service to start, not null
    */
-  public AbstractBloombergStaticDataProvider(BloombergConnector bloombergConnector, String serviceName, String authenticationOption, double reAuthorizationScheduleTime) {
+  public AbstractBloombergStaticDataProvider(BloombergConnector bloombergConnector, String serviceName) {
     ArgumentChecker.notNull(bloombergConnector, "bloombergConnector");
+    ArgumentChecker.notNull(bloombergConnector.getSessionOptions(), "bloombergConnector.sessionOptions");
     ArgumentChecker.notEmpty(serviceName, "serviceName");
-    ArgumentChecker.isTrue(reAuthorizationScheduleTime > 0, "validation schedule time must be positive number");
 
-    _authenticationOption = getAuthenticationOptionStr(authenticationOption);
-    bloombergConnector.getSessionOptions().setAuthenticationOptions(_authenticationOption);
+    _requiresAuthentication = bloombergConnector.requiresAuthentication();
+    _serviceName = serviceName;
     _bloombergConnector = bloombergConnector;
-    _sessionProvider = new SessionProvider(_bloombergConnector, serviceName);
-    _reAuthorizationScheduleTime = (int) Math.round(3600 * reAuthorizationScheduleTime);
+    _sessionProvider = new SessionProvider(_bloombergConnector, getServiceNames());
   }
 
-  private String getAuthenticationOptionStr(String authenticationOption) {
-    authenticationOption = StringUtils.trimToNull(authenticationOption);
-    if (authenticationOption == null) {
-      return null;
+  private List<String> getServiceNames() {
+    List<String> serviceNames = Lists.newArrayList(_serviceName);
+    if (_requiresAuthentication) {
+      serviceNames.add(BloombergConstants.AUTH_SVC_NAME);
     }
-    switch (authenticationOption) {
-      case AUTH_OPTION_NONE:
-        return null;
-      case AUTH_OPTION_USER:
-        return AUTH_USER;
-      default:
-        if (authenticationOption.regionMatches(true, 0, AUTH_OPTION_APP, 0, AUTH_OPTION_APP.length())) {
-          return AUTH_APP_PREFIX + authenticationOption.substring(AUTH_OPTION_APP.length());
-        } else if (authenticationOption.regionMatches(true, 0, AUTH_OPTION_DIR, 0, AUTH_OPTION_DIR.length())) {
-          return AUTH_DIR_PREFIX + authenticationOption.substring(AUTH_OPTION_DIR.length());
-        } else {
-          throw new OpenGammaRuntimeException("Invalid authenticationOption format: " + authenticationOption);
-        }
-    }
+    return serviceNames;
   }
 
   //-------------------------------------------------------------------------
@@ -197,7 +138,7 @@ public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
    * @throws OpenGammaRuntimeException If no connection to Bloomberg is available
    */
   protected Service getService() {
-    return _sessionProvider.getService();
+    return _sessionProvider.getService(_serviceName);
   }
 
   private synchronized void releaseBlockedRequests() {
@@ -234,9 +175,9 @@ public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
     SettableFuture<List<Element>> resultFuture = SettableFuture.<List<Element>>create();
     ArrayList<Element> result = new ArrayList<>();
     try {
-      if (_systemUserIdentity != null) {
+      if (_requiresAuthentication) {
         getLogger().debug("submitting authorized request {} with cid {}", request, cid);
-        session.sendRequest(request, _systemUserIdentity, cid);
+        session.sendRequest(request, _applicationIdentity, cid);
       } else {
         getLogger().debug("submitting normal request {} with cid {}", request, cid);
         session.sendRequest(request, cid);
@@ -304,22 +245,10 @@ public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
     getLogger().info("Bloomberg started");
 
 
-    if (_authenticationOption != null) {
-      _systemUserIdentity = authorizeUser();
-      _identityScheduler = Executors.newScheduledThreadPool(1);
-      _identityCheckTask = _identityScheduler.scheduleAtFixedRate(new Runnable() {
-
-        @Override
-        public void run() {
-          getLogger().debug("Re authorizing the user");
-          try {
-            _systemUserIdentity = authorizeUser();
-          } catch (Exception ex) {
-            releaseBlockedRequests();
-            throw ex;
-          }
-        }
-      }, _reAuthorizationScheduleTime, _reAuthorizationScheduleTime, SECONDS);
+    if (_requiresAuthentication) {
+      // we need authorization done
+      BloombergBpipeApplicationUserIdentityProvider identityProvider = new BloombergBpipeApplicationUserIdentityProvider(_sessionProvider);
+      _applicationIdentity = identityProvider.getIdentity();
     }
   }
 
@@ -369,61 +298,8 @@ public abstract class AbstractBloombergStaticDataProvider implements Lifecycle {
     releaseBlockedRequests();
 
     getLogger().debug("shutting down identity scheduler task");
-    if (isAuthorized()) {
-      _identityCheckTask.cancel(true);
-      _identityScheduler.shutdownNow();
-    }
     _sessionProvider.stop();
     getLogger().info("Bloomberg event processor stopped");
-  }
-
-  protected boolean isAuthorized() {
-    return _identityCheckTask != null && _identityScheduler != null;
-  }
-
-  private Identity authorizeUser() {
-    Session session = getSession();
-    final Identity identity = session.createIdentity();
-    getLogger().debug("Attempting to authorize user using authentication option: {}", _authenticationOption);
-    EventQueue tokenEventQueue = new EventQueue();
-    try {
-      getSession().generateToken(new CorrelationID(generateCorrelationID()), tokenEventQueue);
-      String token = null;
-      //Generate token responses will come on this dedicated queue. There would be no other messages on that queue.
-      Event event = tokenEventQueue.nextEvent(WAIT_TIME_MS);
-      if (event.eventType() == Event.EventType.TOKEN_STATUS || event.eventType() == Event.EventType.REQUEST_STATUS) {
-        for (Message msg : event) {
-          if (msg.messageType() == TOKEN_SUCCESS) {
-            token = msg.getElementAsString(TOKEN_ELEMENT);
-          }
-        }
-      }
-      if (token == null) {
-        throw new OpenGammaRuntimeException("Failed to get token for bpipe app using  authentication option: " + _authenticationOption);
-      }
-  
-      getLogger().debug("Token {} generated for application: {}", token, _authenticationOption);
-      if (!getSession().openService(AUTH_SERVICE)) {
-        throw new OpenGammaRuntimeException("Failure to open service: " + AUTH_SERVICE);
-      }
-      Service authService = getSession().getService(AUTH_SERVICE);
-      Request authRequest = authService.createAuthorizationRequest();
-      authRequest.set(TOKEN_ELEMENT, token);
-  
-      List<Element> authorizationResponse = submitAuthorizationRequest(authRequest, identity).get();
-      if (authorizationResponse == null || authorizationResponse.isEmpty()) {
-        throw new OpenGammaRuntimeException("Bloomberg authorization failed using  authentication option: " + _authenticationOption);
-      }
-      for (Element resultElem : authorizationResponse) {
-        if (resultElem != null && AUTHORIZATION_SUCCESSS == resultElem.name()) {
-          getLogger().debug("Authorization success for application: {}", _authenticationOption);
-          return identity;
-        }
-      }
-      throw new OpenGammaRuntimeException("Bloomberg authorization failed using  authentication option: " + _authenticationOption);
-    } catch (IOException | InterruptedException | ExecutionException ex) {
-      throw new OpenGammaRuntimeException("Failure to authenticate the bloomberg user using  authentication option:" + _authenticationOption);
-    }
   }
 
   //-------------------------------------------------------------------------

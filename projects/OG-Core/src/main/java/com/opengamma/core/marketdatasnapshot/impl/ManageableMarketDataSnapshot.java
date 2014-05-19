@@ -24,6 +24,7 @@ import org.threeten.bp.Instant;
 import com.google.common.collect.Maps;
 import com.opengamma.core.marketdatasnapshot.CurveKey;
 import com.opengamma.core.marketdatasnapshot.CurveSnapshot;
+import com.opengamma.core.marketdatasnapshot.NamedSnapshot;
 import com.opengamma.core.marketdatasnapshot.StructuredMarketDataSnapshot;
 import com.opengamma.core.marketdatasnapshot.SurfaceKey;
 import com.opengamma.core.marketdatasnapshot.SurfaceSnapshot;
@@ -51,7 +52,7 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
   private UniqueId _uniqueId;
 
   /**
-   * The name of the snapshot intended for display purposes. This field must not be null for the object to be valid.
+   * The name of the snapshot intended for display purposes.
    */
   @PropertyDefinition
   private String _name;
@@ -117,7 +118,6 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
    */
   public ManageableMarketDataSnapshot(final String name, final UnstructuredMarketDataSnapshot globalValues,
       final Map<YieldCurveKey, YieldCurveSnapshot> yieldCurves) {
-    super();
     _name = name;
     _globalValues = (globalValues != null) ? new ManageableUnstructuredMarketDataSnapshot(globalValues) : null;
     _yieldCurves = yieldCurves;
@@ -135,7 +135,6 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
   public ManageableMarketDataSnapshot(final String name, final UnstructuredMarketDataSnapshot globalValues,
       final Map<YieldCurveKey, YieldCurveSnapshot> yieldCurves, final Map<VolatilitySurfaceKey,
       VolatilitySurfaceSnapshot> volatilitySurfaces, final Map<VolatilityCubeKey, VolatilityCubeSnapshot> volatilityCubes) {
-    super();
     _name = name;
     _globalValues = (globalValues != null) ? new ManageableUnstructuredMarketDataSnapshot(globalValues) : null;
     _yieldCurves = yieldCurves;
@@ -157,7 +156,6 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
   public ManageableMarketDataSnapshot(final String name, final UnstructuredMarketDataSnapshot globalValues,
       final Map<YieldCurveKey, YieldCurveSnapshot> yieldCurves, final Map<CurveKey, CurveSnapshot> curves, final Map<VolatilitySurfaceKey,
       VolatilitySurfaceSnapshot> volatilitySurfaces, final Map<VolatilityCubeKey, VolatilityCubeSnapshot> volatilityCubes) {
-    super();
     _name = name;
     _globalValues = (globalValues != null) ? new ManageableUnstructuredMarketDataSnapshot(globalValues) : null;
     _yieldCurves = yieldCurves;
@@ -182,7 +180,6 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
       final Map<VolatilitySurfaceKey, VolatilitySurfaceSnapshot> volatilitySurfaces,
       final Map<VolatilityCubeKey, VolatilityCubeSnapshot> volatilityCubes,
       final Map<SurfaceKey, SurfaceSnapshot> surfaces) {
-    super();
     _name = name;
     _globalValues = (globalValues != null) ? new ManageableUnstructuredMarketDataSnapshot(globalValues) : null;
     _yieldCurves = yieldCurves;
@@ -197,6 +194,13 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
         copyFrom.getVolatilityCubes(), copyFrom.getSurfaces());
     _basisViewName = copyFrom.getBasisViewName();
     _valuationTime = copyFrom.getValuationTime();
+  }
+
+  @Override
+  public NamedSnapshot withUniqueId(UniqueId uniqueId) {
+    // As this is a mutable object, we just update and return it
+    setUniqueId(uniqueId);
+    return this;
   }
 
   /**
@@ -278,7 +282,7 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
 
   //-----------------------------------------------------------------------
   /**
-   * Gets the name of the snapshot intended for display purposes. This field must not be null for the object to be valid.
+   * Gets the name of the snapshot intended for display purposes.
    * @return the value of the property
    */
   public String getName() {
@@ -286,7 +290,7 @@ public class ManageableMarketDataSnapshot extends DirectBean implements Structur
   }
 
   /**
-   * Sets the name of the snapshot intended for display purposes. This field must not be null for the object to be valid.
+   * Sets the name of the snapshot intended for display purposes.
    * @param name  the new value of the property
    */
   public void setName(String name) {

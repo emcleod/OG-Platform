@@ -31,10 +31,14 @@ public class PermissivePermissionCheckProviderTest {
     PermissionCheckProviderRequest request = PermissionCheckProviderRequest.createGet(ExternalIdBundle.of("A", "B"), "127.0.0.1", "A", "B", "C");
     PermissionCheckProviderResult resultHolder = test.isPermitted(request);
     assertNotNull(resultHolder);
-    assertNotNull(resultHolder.getPermissionCheckResult());
+    assertNotNull(resultHolder.getCheckedPermissions());
     
-    Map<String, Boolean> permissionCheckResult = resultHolder.getPermissionCheckResult();
+    Map<String, Boolean> permissionCheckResult = resultHolder.getCheckedPermissions();
     assertPermissionResult(permissionCheckResult);
+    
+    resultHolder.checkErrors();
+    resultHolder.checkPermitted("A");
+    assertEquals(true, resultHolder.isPermitted("A"));
   }
 
   private void assertPermissionResult(Map<String, Boolean> permissionCheckResult) {
@@ -44,7 +48,7 @@ public class PermissivePermissionCheckProviderTest {
     assertTrue(permissionCheckResult.get("C"));
   }
 
-  public void allTrueWithId_IpAdress_Permissions() {
+  public void allTrueWithId_IpAddress_Permissions() {
     PermissivePermissionCheckProvider test = new PermissivePermissionCheckProvider();
     Map<String, Boolean> result = test.isPermitted(ExternalIdBundle.of("A", "B"), "127.0.0.1", Sets.newHashSet("A", "B", "C"));
     assertNotNull(result);

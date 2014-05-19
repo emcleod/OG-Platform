@@ -33,8 +33,10 @@ import com.opengamma.core.change.ChangeType;
 import com.opengamma.core.user.DateStyle;
 import com.opengamma.core.user.TimeStyle;
 import com.opengamma.core.user.UserAccount;
+import com.opengamma.core.user.UserPrincipals;
 import com.opengamma.core.user.UserProfile;
 import com.opengamma.core.user.UserSource;
+import com.opengamma.id.ExternalIdBundle;
 import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.auth.AuthUtils;
 
@@ -47,8 +49,14 @@ public class UserSourceRealm extends AuthorizingRealm {
 
   /**
    * The user profiles.
+   * This cache operates with {@code ProxyProfile} to ensure that changes to a user are correctly propagated.
    */
   private final MapCache<String, UserProfile> _profiles = new MapCache<>("profiles", new SoftHashMap<String, UserProfile>());
+  /**
+   * The user principals.
+   * This cache operates with {@code ProxyPrincipals} to ensure that changes to a user are correctly propagated.
+   */
+  private final MapCache<String, UserPrincipals> _principals = new MapCache<>("principals", new SoftHashMap<String, UserPrincipals>());
   /**
    * The user master.
    */
@@ -76,6 +84,7 @@ public class UserSourceRealm extends AuthorizingRealm {
             authzCache.clear();
           }
           _profiles.clear();
+          _principals.clear();
         }
       }
     });
@@ -84,6 +93,9 @@ public class UserSourceRealm extends AuthorizingRealm {
   //-------------------------------------------------------------------------
   /**
    * Gets the user profile.
+   * <p>
+   * This method binds the proxy profile that is stored in the user session
+   * to the real profile stored in the cache.
    * 
    * @param userName  the user name, not null
    * @return the user profile, null if not found
@@ -101,6 +113,29 @@ public class UserSourceRealm extends AuthorizingRealm {
     return profile;
   }
 
+  /**
+   * Gets the user principals.
+   * <p>
+   * This method binds the proxy profile that is stored in the user session
+   * to the real profile stored in the cache.
+   * 
+   * @param userName  the user name, not null
+   * @return the user principals, null if not found
+   */
+  UserPrincipals getUserPrincipals(String userName) {
+    UserPrincipals principals = _principals.get(userName);
+    if (principals == null) {
+      try {
+        UserAccount account = _userSource.getAccount(userName);
+        _principals.put(userName, SimpleUserPrincipals.from(account));
+      } catch (DataNotFoundException ex) {
+        // ignored
+      }
+    }
+    return principals;
+  }
+
+  //-------------------------------------------------------------------------
   @Override
   public boolean supports(AuthenticationToken token) {
     return token instanceof UsernamePasswordToken;
@@ -109,20 +144,42 @@ public class UserSourceRealm extends AuthorizingRealm {
   @Override
   protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
     try {
+      // load and validate
       UsernamePasswordToken upToken = (UsernamePasswordToken) token;
-      String userName = upToken.getUsername();
-      UserAccount account = loadUserByName(userName);
+      String enteredUserName = upToken.getUsername();
+      UserAccount account = loadUserByName(enteredUserName);
       account.getStatus().check();
+      // make data available in the session
+      String userName = account.getUserName();
       _profiles.put(userName, account.getProfile());
-      AuthUtils.getSubject().getSession().setAttribute(UserProfile.class.getName(), new ProxyProfile(userName));
+      _principals.put(userName, SimpleUserPrincipals.from(account));
+      AuthUtils.getSubject().getSession().setAttribute(UserProfile.ATTRIBUTE_KEY, new ProxyProfile(userName));
+      AuthUtils.getSubject().getSession().setAttribute(UserPrincipals.ATTRIBUTE_KEY, new ProxyPrincipals(userName, upToken.getHost()));
+      // return Shiro data
       SimplePrincipalCollection principals = new SimplePrincipalCollection();
-      principals.add(account.getUserName(), getName());
+      principals.add(userName, getName());
       return new SimpleAuthenticationInfo(principals, account.getPasswordHash());
       
     } catch (AuthenticationException ex) {
       throw ex;
     } catch (RuntimeException ex) {
       throw new AuthenticationException("Unable to load authentication data: " + token, ex);
+    }
+  }
+
+  @Override
+  protected void assertCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) throws AuthenticationException {
+    // cleanup after login failure
+    // Apache Shiro should provide a protected method to handle this better
+    try {
+      super.assertCredentialsMatch(token, info);
+    } catch (AuthenticationException ex) {
+      String userName = info.getPrincipals().getPrimaryPrincipal().toString();
+      _profiles.remove(userName);
+      _principals.remove(userName);
+      AuthUtils.getSubject().getSession().removeAttribute(UserProfile.ATTRIBUTE_KEY);
+      AuthUtils.getSubject().getSession().removeAttribute(UserPrincipals.ATTRIBUTE_KEY);
+      throw ex;
     }
   }
 
@@ -145,7 +202,9 @@ public class UserSourceRealm extends AuthorizingRealm {
       UserAccount account = loadUserByName(userName);
       SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
       info.addRoles(account.getRoles());
-      info.addStringPermissions(account.getPermissions());
+      for (String permStr : account.getPermissions()) {
+        info.addObjectPermission(getPermissionResolver().resolvePermission(permStr));
+      }
       return info;
       
     } catch (AuthorizationException ex) {
@@ -207,6 +266,45 @@ public class UserSourceRealm extends AuthorizingRealm {
     @Override
     public String toString() {
       return String.format("ProxyProfile[%s]", _userName);
+    }
+  }
+
+  //-------------------------------------------------------------------------
+  /**
+   * The proxy principals.
+   */
+  class ProxyPrincipals implements UserPrincipals {
+    private final String _userName;
+    private final String _networkAddress;
+
+    ProxyPrincipals(String userName, String networkAddress) {
+      _userName = userName;
+      _networkAddress = networkAddress;
+    }
+
+    @Override
+    public String getUserName() {
+      return getUserPrincipals(_userName).getUserName();
+    }
+
+    @Override
+    public ExternalIdBundle getAlternateIds() {
+      return getUserPrincipals(_userName).getAlternateIds();
+    }
+
+    @Override
+    public String getNetworkAddress() {
+      return _networkAddress;
+    }
+
+    @Override
+    public String getEmailAddress() {
+      return getUserPrincipals(_userName).getEmailAddress();
+    }
+
+    @Override
+    public String toString() {
+      return String.format("ProxyPrincipals[%s]", _userName);
     }
   }
 

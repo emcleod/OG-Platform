@@ -240,7 +240,7 @@ public class OpenGammaComponentServer {
       ComponentManager manager = buildManager(configFile, properties);
       manager.load(configFile);
       
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       _logger.logError(ex);
       return false;
     }
@@ -265,7 +265,7 @@ public class OpenGammaComponentServer {
         System.out.println(value);
       }
       
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       _logger.logError(ex);
       return false;
     }
@@ -284,7 +284,7 @@ public class OpenGammaComponentServer {
   protected String queryProperty(String configFile, Map<String, String> properties, String property) {
     ComponentManager manager = buildManager(configFile, properties);
     manager.load(configFile);
-    return manager.getProperties().get(property);
+    return manager.getProperties().getValue(property);
   }
 
   //-------------------------------------------------------------------------
@@ -307,7 +307,7 @@ public class OpenGammaComponentServer {
       repo = manager.start(configFile);
       checkSecurityManager();
       
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       _logger.logError(ex);
       _logger.logError(STARTUP_FAILED_MESSAGE);
       return null;
