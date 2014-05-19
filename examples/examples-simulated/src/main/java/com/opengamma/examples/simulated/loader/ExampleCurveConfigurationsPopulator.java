@@ -116,6 +116,7 @@ public class ExampleCurveConfigurationsPopulator {
    * referencing a curve called "[CURRENCY_STRING] [TENOR] Forward Ibor", and is called 
    * "Default [CURRENCY_STRING] Curves". 
    * @param currency The currency
+   * @param tenor The ibor tenor
    * @return The configuration
    */
   private static CurveConstructionConfiguration makeCurveConstructionConfigurationForCurrency(final String currency, final Tenor tenor) {

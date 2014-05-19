@@ -17,7 +17,7 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.opengamma.analytics.financial.legalentity.LegalEntity;
 import com.opengamma.analytics.financial.legalentity.LegalEntityFilter;
-import com.opengamma.analytics.financial.legalentity.LegalEntityShortName;
+import com.opengamma.analytics.financial.legalentity.LegalEntityRegion;
 import com.opengamma.analytics.math.interpolation.Interpolator1DFactory;
 import com.opengamma.core.config.impl.ConfigItem;
 import com.opengamma.core.id.ExternalSchemes;
@@ -27,7 +27,6 @@ import com.opengamma.financial.analytics.curve.CurveDefinition;
 import com.opengamma.financial.analytics.curve.CurveGroupConfiguration;
 import com.opengamma.financial.analytics.curve.CurveNodeIdMapper;
 import com.opengamma.financial.analytics.curve.CurveTypeConfiguration;
-import com.opengamma.financial.analytics.curve.DiscountingCurveTypeConfiguration;
 import com.opengamma.financial.analytics.curve.InterpolatedCurveDefinition;
 import com.opengamma.financial.analytics.curve.IssuerCurveTypeConfiguration;
 import com.opengamma.financial.analytics.ircurve.CurveInstrumentProvider;
@@ -39,6 +38,7 @@ import com.opengamma.id.ExternalId;
 import com.opengamma.master.config.ConfigMaster;
 import com.opengamma.master.config.ConfigMasterUtils;
 import com.opengamma.util.ArgumentChecker;
+import com.opengamma.util.i18n.Country;
 import com.opengamma.util.money.Currency;
 import com.opengamma.util.time.Tenor;
 
@@ -66,27 +66,28 @@ public class ExampleUSBondCurveConfigurationsPopulator {
    */
   public static void populateConfigAndConventionMaster(final ConfigMaster configMaster) {
     ArgumentChecker.notNull(configMaster, "configMaster");
-    //    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveConstructionConfiguration()));
+    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveConstructionConfiguration()));
     ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveNodeIdMapper()));
     //    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveDefinition()));
   }
 
   /**
    * Creates a curve construction configuration consisting of a single government bond curve
-   * which matches against the issuer name "UGANDA".
+   * which matches against USD.
    * @return The configuration
    */
   private static CurveConstructionConfiguration makeCurveConstructionConfiguration() {
-    final DiscountingCurveTypeConfiguration discountingCurveType = new DiscountingCurveTypeConfiguration(Currency.USD.getCode());
-    final Set<Object> keys = Sets.<Object>newHashSet("UGANDA");
+    final Set<Object> keys = Sets.<Object>newHashSet(Currency.USD);
+    final LegalEntityRegion regionFilter = new LegalEntityRegion(false, false, Collections.<Country>emptySet(), true, Collections.singleton(Currency.USD));
     final Set<LegalEntityFilter<LegalEntity>> filters = new HashSet<>();
-    filters.add(new LegalEntityShortName());
+    filters.add(regionFilter);
     final IssuerCurveTypeConfiguration issuerCurveType = new IssuerCurveTypeConfiguration(keys, filters);
     final Map<String, List<? extends CurveTypeConfiguration>> curveTypes = new HashMap<>();
-    curveTypes.put(CURVE_NAME, Arrays.asList(discountingCurveType, issuerCurveType));
+    curveTypes.put(CURVE_NAME, Arrays.asList(issuerCurveType));
     final CurveGroupConfiguration group = new CurveGroupConfiguration(0, curveTypes);
     final List<CurveGroupConfiguration> groups = Arrays.asList(group);
-    return new CurveConstructionConfiguration(CURVE_CONSTRUCTION_CONFIG_NAME, groups, Collections.<String>emptyList());
+    final List<String> exogenousConfigs = Collections.singletonList("Default USD Curves");
+    return new CurveConstructionConfiguration(CURVE_CONSTRUCTION_CONFIG_NAME, groups, exogenousConfigs);
   }
 
   /**
