@@ -39,6 +39,7 @@ import com.opengamma.examples.simulated.loader.ExampleFunctionConfigurationPopul
 import com.opengamma.examples.simulated.loader.ExampleHistoricalDataGeneratorTool;
 import com.opengamma.examples.simulated.loader.ExampleHolidayLoader;
 import com.opengamma.examples.simulated.loader.ExampleTimeSeriesRatingLoader;
+import com.opengamma.examples.simulated.loader.ExampleUSBondCurveConfigurationsLoader;
 import com.opengamma.examples.simulated.loader.ExampleUgandanBondCurveConfigurationsLoader;
 import com.opengamma.examples.simulated.loader.ExampleViewsPopulator;
 import com.opengamma.financial.generator.AbstractPortfolioGeneratorTool;
@@ -187,6 +188,7 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadFXImpliedCurveConfigurations();
     loadCurveConfigurations();
     loadUgandanBondCurveConfigurations();
+    loadUSBondCurveConfigurations();
     loadViews();
   }
 
@@ -209,16 +211,19 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     /** The string */
     private final String _str;
 
-    private Log(final String str) {
+    @SuppressWarnings("synthetic-access")
+    Log(final String str) {
       s_logger.info("{}", str);
       _str = str;
     }
 
-    private void done() {
+    @SuppressWarnings("synthetic-access")
+    void done() {
       s_logger.debug("{} - finished", _str);
     }
 
-    private void fail(final RuntimeException e) {
+    @SuppressWarnings("synthetic-access")
+    void fail(final RuntimeException e) {
       s_logger.error("{} - failed - {}", _str, e.getMessage());
       throw e;
     }
@@ -546,6 +551,20 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     final Log log = new Log("Creating Ugandan bond curve construction configurations");
     try {
       final ExampleUgandanBondCurveConfigurationsLoader loader = new ExampleUgandanBondCurveConfigurationsLoader();
+      loader.run(getToolContext());
+      log.done();
+    } catch (final RuntimeException t) {
+      log.fail(t);
+    }
+  }
+
+  /**
+   * Loads example US bond curve construction configurations.
+   */
+  private void loadUSBondCurveConfigurations() {
+    final Log log = new Log("Creating US bond curve construction configurations");
+    try {
+      final ExampleUSBondCurveConfigurationsLoader loader = new ExampleUSBondCurveConfigurationsLoader();
       loader.run(getToolContext());
       log.done();
     } catch (final RuntimeException t) {

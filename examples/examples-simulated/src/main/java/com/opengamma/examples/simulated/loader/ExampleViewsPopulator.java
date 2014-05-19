@@ -119,7 +119,6 @@ import com.opengamma.financial.security.capfloor.CapFloorCMSSpreadSecurity;
 import com.opengamma.financial.security.capfloor.CapFloorSecurity;
 import com.opengamma.financial.security.equity.EquitySecurity;
 import com.opengamma.financial.security.future.FutureSecurity;
-import com.opengamma.financial.security.future.IndexFutureSecurity;
 import com.opengamma.financial.security.fx.FXForwardSecurity;
 import com.opengamma.financial.security.fx.FXVolatilitySwapSecurity;
 import com.opengamma.financial.security.option.EquityOptionSecurity;
@@ -761,7 +760,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     viewDefinition.setMinDeltaCalculationPeriod(500L);
     viewDefinition.setMinFullCalculationPeriod(500L);
     final ViewCalculationConfiguration defaultCalConfig = new ViewCalculationConfiguration(viewDefinition, DEFAULT_CALC_CONFIG);
-    addValueRequirements(defaultCalConfig, IndexFutureSecurity.SECURITY_TYPE, new String[] {PRESENT_VALUE, PV01, VALUE_DELTA, VALUE_RHO, FORWARD });
+    addValueRequirements(defaultCalConfig, FutureSecurity.SECURITY_TYPE, new String[] {PRESENT_VALUE, PV01, VALUE_DELTA, VALUE_RHO, FORWARD });
     viewDefinition.addViewCalculationConfiguration(defaultCalConfig);
     return viewDefinition;
   }
