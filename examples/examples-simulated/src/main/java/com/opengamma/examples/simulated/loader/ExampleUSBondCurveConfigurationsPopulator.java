@@ -31,6 +31,7 @@ import com.opengamma.financial.analytics.curve.InterpolatedCurveDefinition;
 import com.opengamma.financial.analytics.curve.IssuerCurveTypeConfiguration;
 import com.opengamma.financial.analytics.ircurve.CurveInstrumentProvider;
 import com.opengamma.financial.analytics.ircurve.StaticCurveInstrumentProvider;
+import com.opengamma.financial.analytics.ircurve.strips.BillNode;
 import com.opengamma.financial.analytics.ircurve.strips.BondNode;
 import com.opengamma.financial.analytics.ircurve.strips.CurveNode;
 import com.opengamma.financial.analytics.ircurve.strips.DataFieldType;
@@ -68,7 +69,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
     ArgumentChecker.notNull(configMaster, "configMaster");
     ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveConstructionConfiguration()));
     ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveNodeIdMapper()));
-    //    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveDefinition()));
+    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveDefinition()));
   }
 
   /**
@@ -91,15 +92,18 @@ public class ExampleUSBondCurveConfigurationsPopulator {
   }
 
   /**
-   * Creates an interpolated curve definition of 20 government bonds with tenors from 6m to 10y in 
-   * 6m intervals. The interpolator is double quadratic with linear extrapolation on both sides.
+   * Creates an interpolated curve definition containing 3 bills with tenors from 6 months to 18 months
+   * in six month intervals and 29 bonds with tenors from 2 years to 30 years in one year intervals. 
+   * The interpolator is double quadratic with linear extrapolation on both sides.
    * @return The curve definition
    */
   private static CurveDefinition makeCurveDefinition() {
     final Set<CurveNode> curveNodes = new LinkedHashSet<>();
-    for (int i = 0; i < 20; i++) {
-      final int months = (int) ((i + 2) / 2. * 12);
-      curveNodes.add(new BondNode(Tenor.ofMonths(months), CURVE_NODE_ID_MAPPER_NAME));
+    for (int i = 6; i <= 18; i += 6) {
+      curveNodes.add(new BillNode(Tenor.ofMonths(i), CURVE_NODE_ID_MAPPER_NAME));
+    }
+    for (int i = 2; i <= 30; i++) {
+      curveNodes.add(new BondNode(Tenor.ofYears(i), CURVE_NODE_ID_MAPPER_NAME));
     }
     final CurveDefinition curveDefinition = new InterpolatedCurveDefinition(CURVE_NAME, curveNodes,
         Interpolator1DFactory.DOUBLE_QUADRATIC, Interpolator1DFactory.LINEAR_EXTRAPOLATOR, Interpolator1DFactory.LINEAR_EXTRAPOLATOR);
