@@ -123,37 +123,37 @@ public class MixedBondPortfolioGeneratorTool extends AbstractPortfolioGeneratorT
 
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
-    final SecurityGenerator<BondSecurity> securities = new BondSecurityGenerator(BONDS, AMOUNTS);
-    configure(securities);
-    final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
-    final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("Bonds"), positions, BONDS.size());
+    final BondSecurityAndPositionGenerator securitiesAndPositions = new BondSecurityAndPositionGenerator(BONDS, AMOUNTS);
+    configure(securitiesAndPositions);
+    final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("Bonds"), securitiesAndPositions, BONDS.size());
     return new PortfolioGenerator(rootNode, portfolioNameGenerator);
   }
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int portfolioSize) {
-    final SecurityGenerator<BondSecurity> securities = new BondSecurityGenerator(BONDS, AMOUNTS);
-    configure(securities);
-    final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
-    return new LeafPortfolioNodeGenerator(new StaticNameGenerator("Bonds"), positions, BONDS.size());
+    final BondSecurityAndPositionGenerator securitiesAndPositions = new BondSecurityAndPositionGenerator(BONDS, AMOUNTS);
+    configure(securitiesAndPositions);
+    return new LeafPortfolioNodeGenerator(new StaticNameGenerator("Bonds"), securitiesAndPositions, BONDS.size());
   }
 
   /**
-   * Creates a portfolio node for list of government bond securities.
+   * Creates a security, position and portfolio node for list of government bond securities.
    */
-  private class BondSecurityGenerator extends SecurityGenerator<BondSecurity> implements PortfolioNodeGenerator {
+  private class BondSecurityAndPositionGenerator extends SecurityGenerator<BondSecurity> implements PortfolioNodeGenerator, PositionGenerator {
     /** The securities */
     private final List<BondSecurity> _securities;
     /** The amounts */
     private final List<Double> _amounts;
     /** The security count */
-    private int _count;
+    private int _securityCount;
+    /** The position count */
+    private int _positionCount;
 
     /**
      * @param securities The government bond securities
      * @param amounts The amount in each position
      */
-    public BondSecurityGenerator(final List<BondSecurity> securities, final List<Double> amounts) {
+    public BondSecurityAndPositionGenerator(final List<BondSecurity> securities, final List<Double> amounts) {
       _securities = securities;
       _amounts = amounts;
     }
@@ -162,23 +162,27 @@ public class MixedBondPortfolioGeneratorTool extends AbstractPortfolioGeneratorT
     public PortfolioNode createPortfolioNode() {
       final SimplePortfolioNode node = new SimplePortfolioNode("Bonds");
       for (int i = 0; i < _securities.size(); i++) {
-        final BigDecimal n = new BigDecimal(_amounts.get(i));
-        final BondSecurity bond = _securities.get(i);
-        final ZonedDateTime tradeDate = bond.getSettlementDate();
-        final ManageableTrade trade = new ManageableTrade(n, getSecurityPersister().storeSecurity(bond), tradeDate.toLocalDate(),
-            tradeDate.toOffsetDateTime().toOffsetTime(), ExternalId.of(Counterparty.DEFAULT_SCHEME, COUNTERPARTY));
-        trade.setPremium(bond.getIssuancePrice());
-        trade.setPremiumCurrency(bond.getCurrency());
-        trade.setPremiumDate(tradeDate.toLocalDate());
-        final Position position = SimplePositionGenerator.createPositionFromTrade(trade);
-        node.addPosition(position);
+        node.addPosition(createPosition());
       }
       return node;
     }
 
     @Override
     public BondSecurity createSecurity() {
-      return _securities.get(_count++);
+      return _securities.get(_securityCount++);
+    }
+
+    @Override
+    public Position createPosition() {
+      final BigDecimal n = new BigDecimal(_amounts.get(_positionCount));
+      final BondSecurity bond = _securities.get(_positionCount++);
+      final ZonedDateTime tradeDate = bond.getSettlementDate();
+      final ManageableTrade trade = new ManageableTrade(n, getSecurityPersister().storeSecurity(bond), tradeDate.toLocalDate(),
+          tradeDate.toOffsetDateTime().toOffsetTime(), ExternalId.of(Counterparty.DEFAULT_SCHEME, COUNTERPARTY));
+      trade.setPremium(bond.getIssuancePrice());
+      trade.setPremiumCurrency(bond.getCurrency());
+      trade.setPremiumDate(tradeDate.toLocalDate());
+      return SimplePositionGenerator.createPositionFromTrade(trade);
     }
   }
 }
