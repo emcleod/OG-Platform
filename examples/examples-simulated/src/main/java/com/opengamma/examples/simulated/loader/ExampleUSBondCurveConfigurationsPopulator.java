@@ -6,6 +6,7 @@
 package com.opengamma.examples.simulated.loader;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,17 +45,19 @@ import com.opengamma.util.money.Currency;
 import com.opengamma.util.time.Tenor;
 
 /**
- * Creates a curve construction configuration, interpolated curve definition and curve node id mapper
- * for US bonds. The ISINs used for the bill nodes follow the form "USB000000XXX" where "XXX" is equal
- * to the number of months until bill maturity. Bond nodes follow the form "UST000000XXX" where "XXX" 
+ * Creates a curve construction configurations, interpolated curve definition and curve node id mapper
+ * for US bonds. The ISINs used for the bill nodes follow the form "USB000000NNN" where "NNN" is equal
+ * to the number of months until bill maturity. Bond nodes follow the form "UST000000NNN" where "NNN" 
  * is equal to the number of months until bond maturity. 
  * <p>
  * The bond curve contains bill nodes from 6 months to 18 months in six month increments and bond nodes 
  * from 2 years to 30 years in one year increments, and uses the yield quote to construct the curve.
  */
 public class ExampleUSBondCurveConfigurationsPopulator {
-  /** The curve construction configuration name */
-  private static final String CURVE_CONSTRUCTION_CONFIG_NAME = "US Government Bond Configuration";
+  /** The bond curve construction configuration name */
+  private static final String BOND_CURVE_CONSTRUCTION_CONFIG_NAME = "US Government Bond Configuration";
+  /** The OIS curve construction configuration name */
+  private static final String OIS_CURVE_CONSTRUCTION_CONFIG_NAME = "US Government Bond Configuration (OIS)";
   /** The curve name */
   private static final String CURVE_NAME = "US Government Bond";
   /** The curve node id mapper name */
@@ -67,28 +70,38 @@ public class ExampleUSBondCurveConfigurationsPopulator {
    */
   public static void populateConfigAndConventionMaster(final ConfigMaster configMaster) {
     ArgumentChecker.notNull(configMaster, "configMaster");
-    ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveConstructionConfiguration()));
+    final Collection<CurveConstructionConfiguration> curveConstructionConfigs = makeCurveConstructionConfiguration();
+    for (final CurveConstructionConfiguration config : curveConstructionConfigs) {
+      ConfigMasterUtils.storeByName(configMaster, makeConfig(config));
+    }
     ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveNodeIdMapper()));
     ConfigMasterUtils.storeByName(configMaster, makeConfig(makeCurveDefinition()));
   }
 
   /**
-   * Creates a curve construction configuration consisting of a single government bond curve
-   * which matches against USD.
+   * Creates two curve construction configuration for US bonds; one consisting of a single government bond curve
+   * which matches against USD and uses the two-curve configuration as an exogenous discounting curve, and another
+   * that will discount all cash-flows using the OIS curve.
    * @return The configuration
    */
-  private static CurveConstructionConfiguration makeCurveConstructionConfiguration() {
+  private static Collection<CurveConstructionConfiguration> makeCurveConstructionConfiguration() {
     final Set<Object> keys = Sets.<Object>newHashSet(Currency.USD);
     final LegalEntityRegion regionFilter = new LegalEntityRegion(false, false, Collections.<Country>emptySet(), true, Collections.singleton(Currency.USD));
     final Set<LegalEntityFilter<LegalEntity>> filters = new HashSet<>();
     filters.add(regionFilter);
     final IssuerCurveTypeConfiguration issuerCurveType = new IssuerCurveTypeConfiguration(keys, filters);
-    final Map<String, List<? extends CurveTypeConfiguration>> curveTypes = new HashMap<>();
-    curveTypes.put(CURVE_NAME, Arrays.asList(issuerCurveType));
-    final CurveGroupConfiguration group = new CurveGroupConfiguration(0, curveTypes);
-    final List<CurveGroupConfiguration> groups = Arrays.asList(group);
+    final Map<String, List<? extends CurveTypeConfiguration>> bondCurveTypes = new HashMap<>();
+    bondCurveTypes.put(CURVE_NAME, Arrays.asList(issuerCurveType));
+    final CurveGroupConfiguration bondGroup = new CurveGroupConfiguration(0, bondCurveTypes);
+    final List<CurveGroupConfiguration> bondGroups = Arrays.asList(bondGroup);
+    final Map<String, List<? extends CurveTypeConfiguration>> issuerCurveTypes = new HashMap<>();
+    issuerCurveTypes.put("USD Discounting", Arrays.asList(issuerCurveType));
+    final CurveGroupConfiguration oisGroup = new CurveGroupConfiguration(0, issuerCurveTypes);
+    final List<CurveGroupConfiguration> oisGroups = Arrays.asList(oisGroup);
     final List<String> exogenousConfigs = Collections.singletonList("Default USD Curves");
-    return new CurveConstructionConfiguration(CURVE_CONSTRUCTION_CONFIG_NAME, groups, exogenousConfigs);
+    final CurveConstructionConfiguration bondCurveConfig = new CurveConstructionConfiguration(BOND_CURVE_CONSTRUCTION_CONFIG_NAME, bondGroups, exogenousConfigs);
+    final CurveConstructionConfiguration oisCurveConfig = new CurveConstructionConfiguration(OIS_CURVE_CONSTRUCTION_CONFIG_NAME, oisGroups, exogenousConfigs);
+    return Arrays.asList(bondCurveConfig, oisCurveConfig);
   }
 
   /**
@@ -143,7 +156,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
         suffix = Integer.toString(months);
       }
       final ExternalId isin = ExternalSchemes.syntheticSecurityId("UST000000" + suffix);
-      final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.MARKET_VALUE, DataFieldType.OUTRIGHT);
+      final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, DataFieldType.OUTRIGHT);
       bondNodes.put(tenor, instrumentProvider);
     }
     final CurveNodeIdMapper curveNodeIdMapper = CurveNodeIdMapper.builder()

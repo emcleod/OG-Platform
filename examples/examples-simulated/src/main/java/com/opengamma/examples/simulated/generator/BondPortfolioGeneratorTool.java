@@ -36,7 +36,7 @@ import com.opengamma.util.time.DateUtils;
 import com.opengamma.util.time.Expiry;
 
 /**
- * Generates a portfolio of AUD swaps.
+ * Generates a portfolio of US government bonds.
  */
 public class BondPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
   /** The counterparty */

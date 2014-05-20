@@ -10,6 +10,7 @@ import static com.opengamma.engine.value.ValuePropertyNames.CURRENCY;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE_CALCULATION_CONFIG;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE_CALCULATION_METHOD;
+import static com.opengamma.engine.value.ValuePropertyNames.CURVE_CONSTRUCTION_CONFIG;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE_CURRENCY;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE_EXPOSURES;
 import static com.opengamma.engine.value.ValuePropertyNames.CURVE_SENSITIVITY_CURRENCY;
@@ -241,6 +242,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     storeViewDefinition(getBondTotalReturnSwapViewDefinition(BOND_TRS_PORTFOLIO_NAME, "Bond TRS View"));
     storeViewDefinition(getEquityTotalReturnSwapViewDefinition(EQUITY_TRS_PORTFOLIO_NAME, "Equity TRS View"));
     storeViewDefinition(getOISViewDefinition(OIS_PORTFOLIO_NAME, "OIS View"));
+    storeViewDefinition(getMultiCountryBondViewDefinition("Bond Portfolio", "Bond Desk View"));
   }
 
   private ViewDefinition getEquityViewDefinition(final String portfolioName) {
@@ -766,7 +768,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
   }
 
   /**
-   * Creates a bond view that calculated various clean price, modified and Macaulay durations using
+   * Creates a bond view that calculates clean price, modified and Macaulay durations using
    * both the clean price and the market yield quote, and present value and yield to maturity from 
    * the clean price.
    * @param portfolioName The name of the portfolio
@@ -921,6 +923,53 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     defaultCalcConfig.addMergedOutput(discountingPV01Output);
     defaultCalcConfig.addMergedOutput(discountingYCNSOutput);
     viewDefinition.addViewCalculationConfiguration(defaultCalcConfig);
+    return viewDefinition;
+  }
+
+  /**
+   * Creates a bond view that calculates clean price, modified and Macaulay durations using
+   * both the clean price and the market yield quote, and present value and yield to maturity from 
+   * the clean price.
+   * @param portfolioName The name of the portfolio
+   * @param viewName The name of the view
+   * @return The view definition
+   */
+  private ViewDefinition getMultiCountryBondViewDefinition(final String portfolioName, final String viewName) {
+    final UniqueId portfolioId = getPortfolioId(portfolioName).toLatest();
+    final ViewDefinition viewDefinition = new ViewDefinition(viewName, portfolioId, UserPrincipal.getTestUser());
+    viewDefinition.setDefaultCurrency(Currency.USD);
+    viewDefinition.setMaxDeltaCalculationPeriod(500L);
+    viewDefinition.setMaxFullCalculationPeriod(500L);
+    viewDefinition.setMinDeltaCalculationPeriod(500L);
+    viewDefinition.setMinFullCalculationPeriod(500L);
+    final ViewCalculationConfiguration config = new ViewCalculationConfiguration(viewDefinition, "Bond Curves");
+    final ValueProperties properties = ValueProperties.builder()
+        .with(PROPERTY_CURVE_TYPE, "Discounting")
+        .with(CURVE_EXPOSURES, "Bond Exposures")
+        .with(CALCULATION_METHOD, "Curves")
+        .get();
+    final ValueProperties curveProperties = ValueProperties.builder()
+        .with(PROPERTY_CURVE_TYPE, "Discounting")
+        .with(CURVE, "US Government Bond")
+        .with(CURVE_CONSTRUCTION_CONFIG, "US Government Bond Configuration")
+        .get();
+    //    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
+    config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
+    viewDefinition.addViewCalculationConfiguration(config);
+    //    config = new ViewCalculationConfiguration(viewDefinition, "OIS Curves");
+    //    properties = ValueProperties.builder()
+    //        .with(PROPERTY_CURVE_TYPE, "Discounting")
+    //        .with(CURVE_EXPOSURES, "Bond OIS Exposures")
+    //        .with(CALCULATION_METHOD, "Curves")
+    //        .get();
+    //    curveProperties = ValueProperties.builder()
+    //        .with(PROPERTY_CURVE_TYPE, "Discounting")
+    //        .with(CURVE_CONSTRUCTION_CONFIG, "Default USD Curves")
+    //        .with(CURVE, "USD Discounting")
+    //        .get();
+    //    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
+    //    config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
+    //    viewDefinition.addViewCalculationConfiguration(config);
     return viewDefinition;
   }
 
