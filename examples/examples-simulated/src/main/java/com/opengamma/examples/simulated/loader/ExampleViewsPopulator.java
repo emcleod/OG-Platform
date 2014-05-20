@@ -242,7 +242,7 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     storeViewDefinition(getBondTotalReturnSwapViewDefinition(BOND_TRS_PORTFOLIO_NAME, "Bond TRS View"));
     storeViewDefinition(getEquityTotalReturnSwapViewDefinition(EQUITY_TRS_PORTFOLIO_NAME, "Equity TRS View"));
     storeViewDefinition(getOISViewDefinition(OIS_PORTFOLIO_NAME, "OIS View"));
-    storeViewDefinition(getMultiCountryBondViewDefinition("Bond Portfolio", "Bond Desk View"));
+    storeViewDefinition(getMultiCountryBondViewDefinition("Bond Portfolio", "Bond Portfolio View"));
   }
 
   private ViewDefinition getEquityViewDefinition(final String portfolioName) {
@@ -942,34 +942,34 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
     viewDefinition.setMaxFullCalculationPeriod(500L);
     viewDefinition.setMinDeltaCalculationPeriod(500L);
     viewDefinition.setMinFullCalculationPeriod(500L);
-    final ViewCalculationConfiguration config = new ViewCalculationConfiguration(viewDefinition, "Bond Curves");
-    final ValueProperties properties = ValueProperties.builder()
+    ViewCalculationConfiguration config = new ViewCalculationConfiguration(viewDefinition, "Bond Curves");
+    ValueProperties properties = ValueProperties.builder()
         .with(PROPERTY_CURVE_TYPE, "Discounting")
         .with(CURVE_EXPOSURES, "Bond Exposures")
         .with(CALCULATION_METHOD, "Curves")
         .get();
-    final ValueProperties curveProperties = ValueProperties.builder()
+    ValueProperties curveProperties = ValueProperties.builder()
         .with(PROPERTY_CURVE_TYPE, "Discounting")
         .with(CURVE, "US Government Bond")
         .with(CURVE_CONSTRUCTION_CONFIG, "US Government Bond Configuration")
         .get();
-    //    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
     config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
     viewDefinition.addViewCalculationConfiguration(config);
-    //    config = new ViewCalculationConfiguration(viewDefinition, "OIS Curves");
-    //    properties = ValueProperties.builder()
-    //        .with(PROPERTY_CURVE_TYPE, "Discounting")
-    //        .with(CURVE_EXPOSURES, "Bond OIS Exposures")
-    //        .with(CALCULATION_METHOD, "Curves")
-    //        .get();
-    //    curveProperties = ValueProperties.builder()
-    //        .with(PROPERTY_CURVE_TYPE, "Discounting")
-    //        .with(CURVE_CONSTRUCTION_CONFIG, "Default USD Curves")
-    //        .with(CURVE, "USD Discounting")
-    //        .get();
-    //    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
-    //    config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
-    //    viewDefinition.addViewCalculationConfiguration(config);
+    config = new ViewCalculationConfiguration(viewDefinition, "OIS Curves");
+    properties = ValueProperties.builder()
+        .with(PROPERTY_CURVE_TYPE, "Discounting")
+        .with(CURVE_EXPOSURES, "Bond OIS Exposures")
+        .with(CALCULATION_METHOD, "Curves")
+        .get();
+    curveProperties = ValueProperties.builder()
+        .with(PROPERTY_CURVE_TYPE, "Discounting")
+        .with(CURVE_CONSTRUCTION_CONFIG, "Default USD Curves")
+        .with(CURVE, "USD Discounting")
+        .get();
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
+    config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
+    viewDefinition.addViewCalculationConfiguration(config);
     return viewDefinition;
   }
 
