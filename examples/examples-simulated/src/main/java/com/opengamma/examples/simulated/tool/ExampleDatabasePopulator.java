@@ -26,6 +26,7 @@ import com.opengamma.OpenGammaRuntimeException;
 import com.opengamma.component.tool.AbstractTool;
 import com.opengamma.examples.simulated.convention.SyntheticInMemoryConventionMasterInitializer;
 import com.opengamma.examples.simulated.generator.SyntheticPortfolioGeneratorTool;
+import com.opengamma.examples.simulated.generator.SyntheticSecuritiesGeneratorTool;
 import com.opengamma.examples.simulated.loader.ExampleCurrencyConfigurationLoader;
 import com.opengamma.examples.simulated.loader.ExampleCurveAndSurfaceDefinitionLoader;
 import com.opengamma.examples.simulated.loader.ExampleCurveConfigurationLoader;
@@ -124,7 +125,9 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
   public static final String BONDS_PORTFOLIO_NAME = "Bond Portfolio";
   /**
    * The name of an index portfolio.
+   * @deprecated The index portfolio is no longer loaded
    */
+  @Deprecated
   public static final String INDEX_PORTFOLIO_NAME = "Index Portfolio";
   /**
    * The name of a bond total return swap portfolio.
@@ -183,7 +186,6 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadFXForwardPortfolio();
     loadERFuturePortfolio();
     loadFXVolatilitySwapPortfolio();
-    loadIndexPortfolio();
     loadBondTotalReturnSwapPortfolio();
     loadEquityTotalReturnSwapPortfolio();
     loadOISPortfolio();
@@ -194,6 +196,7 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadCurveConfigurations();
     loadUgandanBondCurveConfigurations();
     loadUSBondCurveConfigurations();
+    loadIndexSecurities();
     loadViews();
   }
 
@@ -358,6 +361,10 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     return tool;
   }
 
+  private SyntheticSecuritiesGeneratorTool securitiesGeneratorTool() {
+    return new SyntheticSecuritiesGeneratorTool();
+  }
+
   private void loadMultiCurrencySwapPortfolio() {
     final Log log = new Log("Creating example multi currency swap portfolio");
     try {
@@ -421,10 +428,13 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     }
   }
 
-  private void loadIndexPortfolio() {
+  /**
+   * Loads a list of index securities.
+   */
+  private void loadIndexSecurities() {
     final Log log = new Log("Creating example indices");
     try {
-      portfolioGeneratorTool().run(getToolContext(), INDEX_PORTFOLIO_NAME, "Index", true, null);
+      securitiesGeneratorTool().run(getToolContext(), "Index", true);
       log.done();
     } catch (final RuntimeException t) {
       log.fail(t);

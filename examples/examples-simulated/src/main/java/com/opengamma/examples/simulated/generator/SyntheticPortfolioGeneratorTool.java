@@ -5,8 +5,6 @@
  */
 package com.opengamma.examples.simulated.generator;
 
-import com.opengamma.lambdava.functions.Function2;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -16,10 +14,11 @@ import com.opengamma.financial.generator.AbstractPortfolioGeneratorTool;
 import com.opengamma.financial.generator.SecurityGenerator;
 import com.opengamma.financial.tool.ToolContext;
 import com.opengamma.id.ExternalId;
+import com.opengamma.lambdava.functions.Function2;
 import com.opengamma.util.money.Currency;
 
 /**
- * Utility for generating a portfolio of securities with OG_SYNTHETIC_TICKER tickers.
+ * Utility for generating a portfolio of securities with {@link ExternalSchemes#OG_SYNTHETIC_TICKER} tickers.
  */
 public class SyntheticPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool {
 
@@ -41,20 +40,36 @@ public class SyntheticPortfolioGeneratorTool extends AbstractPortfolioGeneratorT
     });
   }
 
-  public static void main(final String[] args) { // CSIGNORE
-    AbstractTool<ToolContext> tool = new AbstractTool<ToolContext>() {
+  /**
+   * Main method. 
+   * @param args Uses the command line args<p>
+   * <ul>
+   * <li> h - help
+   * <li> c - config
+   * <li> l - logback
+   * <li> p - sets the name of the portfolio (required)
+   * <li> s - sets the name of the security generator (required)
+   * <li> w - writes the portfolio and securities to the database
+   * <li> cp - sets the name of the counterparty
+   * </ul>
+   */
+  public static void main(final String[] args) {
+    final AbstractTool<ToolContext> tool = new AbstractTool<ToolContext>() {
       private final SyntheticPortfolioGeneratorTool _instance = new SyntheticPortfolioGeneratorTool();
+
       @Override
-      protected Options createOptions(boolean mandatoryConfigArg) {
+      protected Options createOptions(final boolean mandatoryConfigArg) {
         final Options options = super.createOptions(mandatoryConfigArg);
         _instance.createOptions(options);
         return options;
       }
+
       @Override
       protected void doRun() throws Exception {
         final CommandLine commandLine = getCommandLine();
         _instance.run(getToolContext(), commandLine);
       }
+
       @Override
       protected Class<?> getEntryPointClass() {
         return SyntheticPortfolioGeneratorTool.class;
