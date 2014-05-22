@@ -49,7 +49,7 @@ public class CollectionSecurityGeneratorTest {
    */
   @Test(expectedExceptions = IllegalArgumentException.class)
   public void testNullArray() {
-    new CollectionSecurityGenerator((ManageableSecurity[]) null);
+    new CollectionSecurityGenerator<>((ManageableSecurity[]) null);
   }
 
   /**
@@ -57,7 +57,7 @@ public class CollectionSecurityGeneratorTest {
    */
   @Test(expectedExceptions = IllegalStateException.class)
   public void testTooManyRequested() {
-    final CollectionSecurityGenerator generator = new CollectionSecurityGenerator(SECURITIES);
+    final CollectionSecurityGenerator<ManageableSecurity> generator = new CollectionSecurityGenerator<>(SECURITIES);
     for (int i = 0; i < SECURITIES.length + 1; i++) {
       generator.createSecurity();
     }
@@ -68,17 +68,17 @@ public class CollectionSecurityGeneratorTest {
    */
   @Test
   public void test() {
-    CollectionSecurityGenerator generator = new CollectionSecurityGenerator(SECURITIES);
+    CollectionSecurityGenerator<ManageableSecurity> generator = new CollectionSecurityGenerator<>(SECURITIES);
     for (final ManageableSecurity element : SECURITIES) {
       assertEquals(element, generator.createSecurity());
     }
-    generator = new CollectionSecurityGenerator(Arrays.asList(SECURITIES));
+    generator = new CollectionSecurityGenerator<>(Arrays.asList(SECURITIES));
     for (final ManageableSecurity element : SECURITIES) {
       assertEquals(element, generator.createSecurity());
     }
     final Collection<ManageableSecurity> collection = new HashSet<>();
     collection.addAll(Arrays.asList(SECURITIES));
-    generator = new CollectionSecurityGenerator(collection);
+    generator = new CollectionSecurityGenerator<>(collection);
     for (final ManageableSecurity security : collection) {
       assertEquals(security, generator.createSecurity());
     }

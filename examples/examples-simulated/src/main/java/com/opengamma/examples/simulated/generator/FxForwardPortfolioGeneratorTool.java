@@ -89,7 +89,7 @@ public class FxForwardPortfolioGeneratorTool extends AbstractPortfolioGeneratorT
 
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
-    final SecurityGenerator<FXForwardSecurity> securities = createFXForwardSecurityGenerator();
+    final SecurityGenerator<FXForwardSecurity> securities = new CollectionSecurityGenerator<>(FX_FORWARDS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Forwards"), positions, FX_FORWARDS.size());
@@ -98,26 +98,10 @@ public class FxForwardPortfolioGeneratorTool extends AbstractPortfolioGeneratorT
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int portfolioSize) {
-    final SecurityGenerator<FXForwardSecurity> securities = createFXForwardSecurityGenerator();
+    final SecurityGenerator<FXForwardSecurity> securities = new CollectionSecurityGenerator<>(FX_FORWARDS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Forwards"), positions, FX_FORWARDS.size());
-  }
-
-  private SecurityGenerator<FXForwardSecurity> createFXForwardSecurityGenerator() {
-    final SecurityGenerator<FXForwardSecurity> securities = new SecurityGenerator<FXForwardSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public FXForwardSecurity createSecurity() {
-        final FXForwardSecurity fxForward = FX_FORWARDS.get(_count++);
-        return fxForward;
-      }
-
-    };
-    configure(securities);
-    return securities;
   }
 
 }

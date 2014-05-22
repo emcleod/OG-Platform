@@ -71,7 +71,7 @@ public class FXVolatilitySwapPortfolioGeneratorTool extends AbstractPortfolioGen
 
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
-    final SecurityGenerator<ManageableSecurity> securities = createFXVolatilitySwapSecurityGenerator(FX_VOLATILITY_SWAPS.size());
+    final SecurityGenerator<ManageableSecurity> securities = new CollectionSecurityGenerator<>(FX_VOLATILITY_SWAPS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Volatility Swaps"), positions, FX_VOLATILITY_SWAPS.size());
@@ -80,33 +80,10 @@ public class FXVolatilitySwapPortfolioGeneratorTool extends AbstractPortfolioGen
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int portfolioSize) {
-    final SecurityGenerator<ManageableSecurity> securities = createFXVolatilitySwapSecurityGenerator(FX_VOLATILITY_SWAPS.size());
+    final SecurityGenerator<ManageableSecurity> securities = new CollectionSecurityGenerator<>(FX_VOLATILITY_SWAPS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Volatility Swaps"), positions, FX_VOLATILITY_SWAPS.size());
   }
 
-  /**
-   * Creates a security generator that loops over the list of FX volatility swaps.
-   * @size The expected size of the portfolio
-   * @return The security generator
-   */
-  private SecurityGenerator<ManageableSecurity> createFXVolatilitySwapSecurityGenerator(final int size) {
-    final SecurityGenerator<ManageableSecurity> securities = new SecurityGenerator<ManageableSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public ManageableSecurity createSecurity() {
-        if (_count > size - 1) {
-          throw new IllegalStateException("Should not ask for more than " + size + " securities");
-        }
-        final ManageableSecurity fxVolatilitySwap = FX_VOLATILITY_SWAPS.get(_count++);
-        return fxVolatilitySwap;
-      }
-
-    };
-    configure(securities);
-    return securities;
-  }
 }

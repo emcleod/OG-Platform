@@ -53,7 +53,7 @@ public class AUDSwapPortfolioGeneratorTool extends AbstractPortfolioGeneratorToo
   /** Semi-annual frequency */
   private static final Frequency SEMI_ANNUAL = PeriodFrequency.SEMI_ANNUAL;
   /** The region */
-  private static final ExternalId REGION =  ExternalSchemes.financialRegionId("AU");
+  private static final ExternalId REGION = ExternalSchemes.financialRegionId("AU");
   /** Following business day convention */
   private static final BusinessDayConvention FOLLOWING = BusinessDayConventions.FOLLOWING;
   /** The notional */
@@ -96,7 +96,7 @@ public class AUDSwapPortfolioGeneratorTool extends AbstractPortfolioGeneratorToo
 
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
-    final SecurityGenerator<SwapSecurity> securities = createSwapSecurityGenerator();
+    final SecurityGenerator<SwapSecurity> securities = new CollectionSecurityGenerator<>(SWAPS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("AUD Swaps"), positions, 4);
@@ -105,28 +105,28 @@ public class AUDSwapPortfolioGeneratorTool extends AbstractPortfolioGeneratorToo
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int portfolioSize) {
-    final SecurityGenerator<SwapSecurity> securities = createSwapSecurityGenerator();
+    final SecurityGenerator<SwapSecurity> securities = new CollectionSecurityGenerator<>(SWAPS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("Swaps"), positions, 4);
   }
 
-  private SecurityGenerator<SwapSecurity> createSwapSecurityGenerator() {
-    final SecurityGenerator<SwapSecurity> securities = new SecurityGenerator<SwapSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public SwapSecurity createSecurity() {
-        if (_count > 3) {
-          throw new IllegalStateException("Should not ask for more than 4 securities");
-        }
-        final SwapSecurity swap = SWAPS[_count++];
-        return swap;
-      }
-
-    };
-    configure(securities);
-    return securities;
-  }
+  //  private SecurityGenerator<SwapSecurity> createSwapSecurityGenerator() {
+  //    final SecurityGenerator<SwapSecurity> securities = new SecurityGenerator<SwapSecurity>() {
+  //      private int _count;
+  //
+  //      @SuppressWarnings("synthetic-access")
+  //      @Override
+  //      public SwapSecurity createSecurity() {
+  //        if (_count > 3) {
+  //          throw new IllegalStateException("Should not ask for more than 4 securities");
+  //        }
+  //        final SwapSecurity swap = SWAPS[_count++];
+  //        return swap;
+  //      }
+  //
+  //    };
+  //    configure(securities);
+  //    return securities;
+  //  }
 }

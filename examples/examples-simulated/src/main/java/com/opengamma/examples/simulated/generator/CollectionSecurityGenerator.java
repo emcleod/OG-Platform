@@ -18,15 +18,16 @@ import com.opengamma.util.ArgumentChecker;
  * with repeated calls to {{@link #createSecurity()} and an exception is thrown if more
  * securities are requested than were provided in the original collection. The order in
  * which the securities are returned depends on the original collection.
+ * @param <T>
  */
-public class CollectionSecurityGenerator extends SecurityGenerator<ManageableSecurity> {
+public class CollectionSecurityGenerator<T extends ManageableSecurity> extends SecurityGenerator<T> {
   /** The iterator */
-  private final Iterator<ManageableSecurity> _iterator;
+  private final Iterator<T> _iterator;
 
   /**
    * @param securities The securities, not null
    */
-  public CollectionSecurityGenerator(final Collection<ManageableSecurity> securities) {
+  public CollectionSecurityGenerator(final Collection<T> securities) {
     ArgumentChecker.notNull(securities, "securities");
     _iterator = securities.iterator();
   }
@@ -34,13 +35,13 @@ public class CollectionSecurityGenerator extends SecurityGenerator<ManageableSec
   /**
    * @param securities The securities, not null
    */
-  public CollectionSecurityGenerator(final ManageableSecurity[] securities) {
+  public CollectionSecurityGenerator(final T[] securities) {
     ArgumentChecker.notNull(securities, "securities");
     _iterator = Arrays.asList(securities).iterator();
   }
 
   @Override
-  public ManageableSecurity createSecurity() {
+  public T createSecurity() {
     if (_iterator.hasNext()) {
       return _iterator.next();
     }

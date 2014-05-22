@@ -94,7 +94,7 @@ public class VanillaFXOptionPortfolioGeneratorTool extends AbstractPortfolioGene
 
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
-    final SecurityGenerator<FXOptionSecurity> securities = createFXOptionSecurityGenerator();
+    final SecurityGenerator<FXOptionSecurity> securities = new CollectionSecurityGenerator<>(FX_OPTIONS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Options"), positions, FX_OPTIONS.size());
@@ -103,25 +103,10 @@ public class VanillaFXOptionPortfolioGeneratorTool extends AbstractPortfolioGene
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int portfolioSize) {
-    final SecurityGenerator<FXOptionSecurity> securities = createFXOptionSecurityGenerator();
+    final SecurityGenerator<FXOptionSecurity> securities = new CollectionSecurityGenerator<>(FX_OPTIONS);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("FX Options"), positions, FX_OPTIONS.size());
   }
 
-  private SecurityGenerator<FXOptionSecurity> createFXOptionSecurityGenerator() {
-    final SecurityGenerator<FXOptionSecurity> securities = new SecurityGenerator<FXOptionSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public FXOptionSecurity createSecurity() {
-        final FXOptionSecurity fxOption = FX_OPTIONS.get(_count++);
-        return fxOption;
-      }
-
-    };
-    configure(securities);
-    return securities;
-  }
 }

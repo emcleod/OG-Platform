@@ -67,30 +67,10 @@ public class IndexPortfolioGeneratorTool extends AbstractPortfolioGeneratorTool 
 
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int size) {
-    final SecurityGenerator<ManageableSecurity> securities = createIndexSecurityGenerator();
+    final SecurityGenerator<ManageableSecurity> securities = new CollectionSecurityGenerator<>(INDICES);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("Indices"), positions, INDICES.size());
-  }
-
-  /**
-   * Creates a security generator that loops over the list of indices.
-   * @return The security generator
-   */
-  private SecurityGenerator<ManageableSecurity> createIndexSecurityGenerator() {
-    final SecurityGenerator<ManageableSecurity> securities = new SecurityGenerator<ManageableSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public ManageableSecurity createSecurity() {
-        final ManageableSecurity index = INDICES.get(_count++);
-        return index;
-      }
-
-    };
-    configure(securities);
-    return securities;
   }
 
 }

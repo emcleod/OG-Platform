@@ -77,7 +77,7 @@ public class SwaptionPortfolioGeneratorTool extends AbstractPortfolioGeneratorTo
   @Override
   public PortfolioGenerator createPortfolioGenerator(final NameGenerator portfolioNameGenerator) {
     final SwaptionSecurity[] swaptions = createSwaptions(PORTFOLIO_SIZE);
-    final SecurityGenerator<SwaptionSecurity> securities = createSwaptionSecurityGenerator(swaptions, PORTFOLIO_SIZE);
+    final SecurityGenerator<SwaptionSecurity> securities = new CollectionSecurityGenerator<>(swaptions);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     final PortfolioNodeGenerator rootNode = new LeafPortfolioNodeGenerator(new StaticNameGenerator("Swaptions"), positions, PORTFOLIO_SIZE);
@@ -87,7 +87,7 @@ public class SwaptionPortfolioGeneratorTool extends AbstractPortfolioGeneratorTo
   @Override
   public PortfolioNodeGenerator createPortfolioNodeGenerator(final int size) {
     final SwaptionSecurity[] swaptions = createSwaptions(size);
-    final SecurityGenerator<SwaptionSecurity> securities = createSwaptionSecurityGenerator(swaptions, size);
+    final SecurityGenerator<SwaptionSecurity> securities = new CollectionSecurityGenerator<>(swaptions);
     configure(securities);
     final PositionGenerator positions = new SimplePositionGenerator<>(securities, getSecurityPersister(), getCounterPartyGenerator());
     return new LeafPortfolioNodeGenerator(new StaticNameGenerator("Swaptions"), positions, size);
@@ -145,21 +145,5 @@ public class SwaptionPortfolioGeneratorTool extends AbstractPortfolioGeneratorTo
     }
     return swaptions;
   }
-
-  private SecurityGenerator<SwaptionSecurity> createSwaptionSecurityGenerator(final SwaptionSecurity[] swaptions, final int size) {
-    final SecurityGenerator<SwaptionSecurity> securities = new SecurityGenerator<SwaptionSecurity>() {
-      private int _count;
-
-      @Override
-      public SwaptionSecurity createSecurity() {
-        if (_count > size - 1) {
-          throw new IllegalStateException("Should not ask for more than " + size + " securities");
-        }
-        return swaptions[_count++];
-      }
-    };
-    configure(securities);
-    return securities;
-  };
 
 }
