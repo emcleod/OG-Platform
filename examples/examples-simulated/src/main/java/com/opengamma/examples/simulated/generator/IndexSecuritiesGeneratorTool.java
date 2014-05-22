@@ -61,29 +61,9 @@ public class IndexSecuritiesGeneratorTool extends AbstractSecuritiesGeneratorToo
 
   @Override
   public SecuritiesGenerator createSecuritiesGenerator() {
-    final SecurityGenerator<ManageableSecurity> securityGenerator = createIndexSecurityGenerator();
+    final SecurityGenerator<ManageableSecurity> securityGenerator = new CollectionSecurityGenerator(INDICES);
     configure(securityGenerator);
     return new SecuritiesGenerator(securityGenerator, INDICES.size());
-  }
-
-  /**
-   * Creates a security generator that loops over the list of indices.
-   * @return The security generator
-   */
-  private SecurityGenerator<ManageableSecurity> createIndexSecurityGenerator() {
-    final SecurityGenerator<ManageableSecurity> securities = new SecurityGenerator<ManageableSecurity>() {
-      private int _count;
-
-      @SuppressWarnings("synthetic-access")
-      @Override
-      public ManageableSecurity createSecurity() {
-        final ManageableSecurity index = INDICES.get(_count++);
-        return index;
-      }
-
-    };
-    configure(securities);
-    return securities;
   }
 
 }

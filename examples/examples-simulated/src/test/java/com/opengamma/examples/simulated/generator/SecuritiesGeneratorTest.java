@@ -14,12 +14,14 @@ import org.testng.annotations.Test;
 import com.opengamma.financial.generator.SecurityGenerator;
 import com.opengamma.master.security.ManageableSecurity;
 import com.opengamma.master.security.RawSecurity;
+import com.opengamma.util.test.TestGroup;
 
 /**
  * @author emcleod
  *
  * Tests {@link SecuritiesGenerator}.
  */
+@Test(groups = TestGroup.UNIT)
 public class SecuritiesGeneratorTest {
 
   /**
@@ -64,10 +66,18 @@ public class SecuritiesGeneratorTest {
     }
   }
 
+  /**
+   * Testing class that creates a list of {@link RawSecurity} that only hold a name.
+   */
   private static class MySecurityGenerator extends SecurityGenerator<RawSecurity> {
+    /** The maximum number of securities that can be created */
     private final int _maxSecurities;
+    /** The count of securities that have been created */
     private int _count;
 
+    /**
+     * @param maxSecurities The maximum number of securities
+     */
     public MySecurityGenerator(final int maxSecurities) {
       _maxSecurities = maxSecurities;
     }
