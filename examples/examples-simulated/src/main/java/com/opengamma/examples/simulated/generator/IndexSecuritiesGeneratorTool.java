@@ -61,7 +61,7 @@ public class IndexSecuritiesGeneratorTool extends AbstractSecuritiesGeneratorToo
 
   @Override
   public SecuritiesGenerator createSecuritiesGenerator() {
-    final SecurityGenerator<ManageableSecurity> securityGenerator = new CollectionSecurityGenerator(INDICES);
+    final SecurityGenerator<ManageableSecurity> securityGenerator = new CollectionSecurityGenerator<>(INDICES);
     configure(securityGenerator);
     return new SecuritiesGenerator(securityGenerator, INDICES.size());
   }

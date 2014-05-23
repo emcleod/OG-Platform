@@ -197,6 +197,7 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadUgandanBondCurveConfigurations();
     loadUSBondCurveConfigurations();
     loadIndexSecurities();
+    loadBondCurveSecurities();
     loadViews();
   }
 
@@ -428,19 +429,6 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     }
   }
 
-  /**
-   * Loads a list of index securities.
-   */
-  private void loadIndexSecurities() {
-    final Log log = new Log("Creating example indices");
-    try {
-      securitiesGeneratorTool().run(getToolContext(), "Index", true);
-      log.done();
-    } catch (final RuntimeException t) {
-      log.fail(t);
-    }
-  }
-
   private void loadSwaptionPortfolio() {
     final Log log = new Log("Creating example swaption portfolio");
     try {
@@ -621,6 +609,32 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     try {
       final ExampleViewsPopulator populator = new ExampleViewsPopulator();
       populator.run(getToolContext());
+      log.done();
+    } catch (final RuntimeException t) {
+      log.fail(t);
+    }
+  }
+
+  /**
+   * Loads a list of index securities.
+   */
+  private void loadIndexSecurities() {
+    final Log log = new Log("Creating example indices");
+    try {
+      securitiesGeneratorTool().run(getToolContext(), "Index", true);
+      log.done();
+    } catch (final RuntimeException t) {
+      log.fail(t);
+    }
+  }
+
+  /**
+   * Loads a list of bond securities used in curves.
+   */
+  private void loadBondCurveSecurities() {
+    final Log log = new Log("Creating bond curve securities");
+    try {
+      securitiesGeneratorTool().run(getToolContext(), "BondCurve", true);
       log.done();
     } catch (final RuntimeException t) {
       log.fail(t);

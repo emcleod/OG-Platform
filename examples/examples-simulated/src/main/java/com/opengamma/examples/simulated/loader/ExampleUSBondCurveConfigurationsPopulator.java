@@ -140,7 +140,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
         suffix = "0" + Integer.toString(i);
       }
       final ExternalId isin = ExternalSchemes.syntheticSecurityId("USB000000" + suffix);
-      final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.MARKET_VALUE, DataFieldType.OUTRIGHT);
+      final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, DataFieldType.OUTRIGHT);
       billNodes.put(tenor, instrumentProvider);
     }
     for (int i = 0; i < 29; i++) {
@@ -148,12 +148,12 @@ public class ExampleUSBondCurveConfigurationsPopulator {
       final int months = years * 12;
       final Tenor tenor = Tenor.ofYears(years);
       String suffix;
-      if (months < 10) {
-        suffix = "00" + Integer.toString(months);
+      if (years < 10) {
+        suffix = "00" + Integer.toString(years);
       } else if (years < 100) {
-        suffix = "0" + Integer.toString(months);
+        suffix = "0" + Integer.toString(years);
       } else {
-        suffix = Integer.toString(months);
+        suffix = Integer.toString(years);
       }
       final ExternalId isin = ExternalSchemes.syntheticSecurityId("UST000000" + suffix);
       final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, DataFieldType.OUTRIGHT);
