@@ -58,12 +58,12 @@ public class ExampleLegalEntityLoader extends AbstractTool<ToolContext> {
     request.setName(entity.getName());
     final LegalEntitySearchResult result = master.search(request);
     if (result.getFirstDocument() != null) {
-      s_logger.error("Updating {}", entity.getName());
+      s_logger.info("Updating {}", entity.getName());
       final LegalEntityDocument document = result.getFirstDocument();
       document.setLegalEntity(entity);
       master.update(document);
     } else {
-      s_logger.error("Adding {}", entity.getName());
+      s_logger.info("Adding {}", entity.getName());
       master.add(new LegalEntityDocument(entity));
     }
   }
