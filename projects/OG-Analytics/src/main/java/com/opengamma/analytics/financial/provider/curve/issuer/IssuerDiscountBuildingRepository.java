@@ -145,7 +145,7 @@ public class IssuerDiscountBuildingRepository {
     allCurveName.addAll(currentCurves); // Manipulation to ensure that the new curves are at the end.
     //Implementation note : if blockBundle don't contain a block for a specific curve then we remove this curve from  beforeCurveName. 
     //Because we can't compute the total bundle without the block for each curve. So we are computing a total bundle without this curve.
-    for (final String name : beforeCurveName) {
+    for (final String name : new LinkedHashSet<>(beforeCurveName)) {
       if (!(blockBundle.getData().containsKey(name))) {
         beforeCurveName.remove(name);
       }
