@@ -39,6 +39,7 @@ import com.opengamma.examples.simulated.loader.ExampleFXImpliedCurveConfiguratio
 import com.opengamma.examples.simulated.loader.ExampleFunctionConfigurationPopulator;
 import com.opengamma.examples.simulated.loader.ExampleHistoricalDataGeneratorTool;
 import com.opengamma.examples.simulated.loader.ExampleHolidayLoader;
+import com.opengamma.examples.simulated.loader.ExampleLegalEntityLoader;
 import com.opengamma.examples.simulated.loader.ExampleTimeSeriesRatingLoader;
 import com.opengamma.examples.simulated.loader.ExampleUSBondCurveConfigurationsLoader;
 import com.opengamma.examples.simulated.loader.ExampleUgandanBondCurveConfigurationsLoader;
@@ -166,6 +167,7 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     loadExchanges();
     loadHolidays();
     loadConventions();
+    loadLegalEntities();
     loadCurrencyConfiguration();
     loadCurveAndSurfaceDefinitions();
     loadCurveCalculationConfigurations();
@@ -641,6 +643,9 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     }
   }
 
+  /**
+   * Loads hard-coded exchange data.
+   */
   private void loadExchanges() {
     final Log log = new Log("Creating exchange data");
     try {
@@ -652,6 +657,9 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     }
   }
 
+  /**
+   * Loads hard-coded holidays.
+   */
   private void loadHolidays() {
     final Log log = new Log("Creating holiday data");
     try {
@@ -663,8 +671,18 @@ public class ExampleDatabasePopulator extends AbstractTool<ToolContext> {
     }
   }
 
-  private static Set<Currency> getAllCurrencies() {
-    return s_currencies;
+  /**
+   * Loads hard-coded legal entity data.
+   */
+  private void loadLegalEntities() {
+    final Log log = new Log("Creating legal entity data");
+    try {
+      final ExampleLegalEntityLoader loader = new ExampleLegalEntityLoader();
+      loader.run(getToolContext());
+      log.done();
+    } catch (final RuntimeException t) {
+      log.fail(t);
+    }
   }
 
   //-------------------------------------------------------------------------

@@ -23,8 +23,8 @@ import com.opengamma.financial.security.bond.BillSecurity;
 import com.opengamma.financial.security.bond.BondSecurity;
 import com.opengamma.financial.security.bond.GovernmentBondSecurity;
 import com.opengamma.id.ExternalId;
-import com.opengamma.master.legalentity.impl.InMemoryLegalEntityMaster;
 import com.opengamma.master.security.ManageableSecurity;
+import com.opengamma.masterdb.legalentity.DbLegalEntityBeanMaster;
 import com.opengamma.util.i18n.Country;
 import com.opengamma.util.money.Currency;
 import com.opengamma.util.time.Expiry;
@@ -45,7 +45,7 @@ public class BondCurveSecuritiesGeneratorTool extends AbstractSecuritiesGenerato
     final ExternalId region = ExternalSchemes.countryRegionId(Country.US);
     DayCount dayCount = DayCounts.ACT_360;
     final Frequency frequency = PeriodFrequency.SEMI_ANNUAL;
-    final ExternalId legalEntityId = ExternalId.of(InMemoryLegalEntityMaster.DEFAULT_OID_SCHEME, "US Government");
+    final ExternalId legalEntityId = ExternalId.of(DbLegalEntityBeanMaster.IDENTIFIER_SCHEME_DEFAULT, "US Government");
     final ZonedDateTime referenceDate = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
     for (int i = 6; i <= 18; i += 6) {
       final Tenor tenor = Tenor.ofMonths(i);
@@ -65,7 +65,6 @@ public class BondCurveSecuritiesGeneratorTool extends AbstractSecuritiesGenerato
     dayCount = DayCounts.ACT_ACT_ICMA;
     for (int i = 0; i < 29; i++) {
       final int years = i + 2;
-      final int months = years * 12;
       final double coupon = 100 - i / 20.;
       final Tenor tenor = Tenor.ofYears(years);
       final BondSecurity bond = new GovernmentBondSecurity("US TREASURY N/B", "Sovereign", "US", "US GOVERNMENT", Currency.USD, SimpleYieldConvention.US_STREET,
