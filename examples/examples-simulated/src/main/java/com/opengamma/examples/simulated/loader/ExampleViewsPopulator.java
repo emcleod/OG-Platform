@@ -19,6 +19,7 @@ import static com.opengamma.engine.value.ValueRequirementNames.ASSET_LEG_PV;
 import static com.opengamma.engine.value.ValueRequirementNames.BOND_DETAILS;
 import static com.opengamma.engine.value.ValueRequirementNames.BUCKETED_PV01;
 import static com.opengamma.engine.value.ValueRequirementNames.CLEAN_PRICE;
+import static com.opengamma.engine.value.ValueRequirementNames.CONVEXITY;
 import static com.opengamma.engine.value.ValueRequirementNames.DELTA;
 import static com.opengamma.engine.value.ValueRequirementNames.FAIR_VALUE;
 import static com.opengamma.engine.value.ValueRequirementNames.FORWARD;
@@ -59,6 +60,7 @@ import static com.opengamma.engine.value.ValueRequirementNames.YIELD_CURVE;
 import static com.opengamma.engine.value.ValueRequirementNames.YIELD_CURVE_JACOBIAN;
 import static com.opengamma.engine.value.ValueRequirementNames.YIELD_CURVE_NODE_SENSITIVITIES;
 import static com.opengamma.engine.value.ValueRequirementNames.YTM;
+import static com.opengamma.engine.value.ValueRequirementNames.Z_SPREAD;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.AUD_SWAP_PORFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.BOND_TRS_PORTFOLIO_NAME;
 import static com.opengamma.examples.simulated.tool.ExampleDatabasePopulator.EQUITY_OPTION_PORTFOLIO_NAME;
@@ -948,12 +950,39 @@ public class ExampleViewsPopulator extends AbstractTool<ToolContext> {
         .with(CURVE_EXPOSURES, "Bond Exposures")
         .with(CALCULATION_METHOD, "Curves")
         .get();
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, CLEAN_PRICE, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, CONVEXITY, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, BOND_DETAILS, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, MACAULAY_DURATION, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, MODIFIED_DURATION, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, YTM, properties);
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, GAMMA_PV01, properties);
+    final String[] curveNames = new String[] {"USD Discounting", "US Government Bond" };
+    for (final String curveName : curveNames) {
+      final ValueProperties curveProperties = properties.copy()
+          .with(CURVE, curveName)
+          .get();
+      config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PV01, curveProperties);
+      config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, BUCKETED_PV01, curveProperties);
+    }
+    final ValueProperties thetaProperties = properties.copy()
+        .with(PROPERTY_DAYS_TO_MOVE_FORWARD, "1")
+        .with(PROPERTY_THETA_CALCULATION_METHOD, THETA_CONSTANT_SPREAD)
+        .get();
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, VALUE_THETA, thetaProperties);
+    final ValueProperties zSpreadProperties = ValueProperties.builder()
+        .with(PROPERTY_CURVE_TYPE, "Discounting")
+        .with(CURVE_EXPOSURES, "Bond Exposures")
+        .with(CALCULATION_METHOD, "Yield")
+        .with(CURVE, "US Government Bond")
+        .get();
+    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, Z_SPREAD, zSpreadProperties);
     ValueProperties curveProperties = ValueProperties.builder()
         .with(PROPERTY_CURVE_TYPE, "Discounting")
         .with(CURVE, "US Government Bond")
         .with(CURVE_CONSTRUCTION_CONFIG, "US Government Bond Configuration")
         .get();
-    config.addPortfolioRequirement(BondSecurity.SECURITY_TYPE, PRESENT_VALUE, properties);
     config.addSpecificRequirement(new ValueRequirement(YIELD_CURVE, ComputationTargetSpecification.NULL, curveProperties));
     viewDefinition.addViewCalculationConfiguration(config);
     config = new ViewCalculationConfiguration(viewDefinition, "OIS Curves");

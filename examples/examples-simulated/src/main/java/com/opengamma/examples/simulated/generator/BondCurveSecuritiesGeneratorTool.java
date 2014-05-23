@@ -5,6 +5,7 @@ package com.opengamma.examples.simulated.generator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.ZoneOffset;
@@ -62,21 +63,21 @@ public class BondCurveSecuritiesGeneratorTool extends AbstractSecuritiesGenerato
       bill.setExternalIdBundle(ExternalSchemes.syntheticSecurityId(isin).toBundle());
       SECURITIES.add(bill);
     }
+    final Random rng = new Random(457);
     dayCount = DayCounts.ACT_ACT_ICMA;
-    for (int i = 0; i < 29; i++) {
-      final int years = i + 2;
-      final double coupon = 100 - i / 20.;
-      final Tenor tenor = Tenor.ofYears(years);
+    for (final int i : new int[] {2, 3, 5, 7, 10, 20, 30 }) {
+      final double coupon = (i > 7 ? 0.5 * i : 0.2 * i) + rng.nextDouble();
+      final Tenor tenor = Tenor.ofYears(i);
       final BondSecurity bond = new GovernmentBondSecurity("US TREASURY N/B", "Sovereign", "US", "US GOVERNMENT", Currency.USD, SimpleYieldConvention.US_STREET,
           new Expiry(referenceDate.plus(tenor.getPeriod())), "FIXED", coupon, frequency, dayCount, referenceDate, referenceDate, referenceDate.plusMonths(6),
           100., 1000000, 100, 100, 100, 100);
       String suffix;
-      if (years < 10) {
-        suffix = "00" + Integer.toString(years);
-      } else if (years < 100) {
-        suffix = "0" + Integer.toString(years);
+      if (i < 10) {
+        suffix = "00" + Integer.toString(i);
+      } else if (i < 100) {
+        suffix = "0" + Integer.toString(i);
       } else {
-        suffix = Integer.toString(years);
+        suffix = Integer.toString(i);
       }
       final String isin = "UST000000" + suffix;
       bond.setName(isin);

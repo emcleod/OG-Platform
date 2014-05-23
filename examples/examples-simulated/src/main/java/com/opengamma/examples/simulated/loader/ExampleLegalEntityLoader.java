@@ -24,12 +24,17 @@ import com.opengamma.scripts.Scriptable;
 
 /**
  * @author elaine
- *
+ * Simple implementation of a legal entity loader.
  */
 @Scriptable
 public class ExampleLegalEntityLoader extends AbstractTool<ToolContext> {
+  /** The logger */
   private static final Logger s_logger = LoggerFactory.getLogger(ExampleLegalEntityLoader.class);
 
+  /**
+   * Main method to run this loader.
+   * @param args The program arguments
+   */
   public static void main(final String[] args) {
     new ExampleLegalEntityLoader().invokeAndTerminate(args);
   }
@@ -42,6 +47,11 @@ public class ExampleLegalEntityLoader extends AbstractTool<ToolContext> {
     storeLegalEntity(usGovernment);
   }
 
+  /**
+   * Stores a legal entity in the legal entity database. If the entity is already
+   * present, updates it. Otherwise, adds a new entry.
+   * @param entity The legal entity
+   */
   private void storeLegalEntity(final ManageableLegalEntity entity) {
     final LegalEntityMaster master = getToolContext().getLegalEntityMaster();
     final LegalEntitySearchRequest request = new LegalEntitySearchRequest();

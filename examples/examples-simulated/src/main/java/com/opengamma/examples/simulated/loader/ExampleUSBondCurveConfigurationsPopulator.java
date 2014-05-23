@@ -51,7 +51,7 @@ import com.opengamma.util.time.Tenor;
  * is equal to the number of months until bond maturity. 
  * <p>
  * The bond curve contains bill nodes from 6 months to 18 months in six month increments and bond nodes 
- * from 2 years to 30 years in one year increments, and uses the yield quote to construct the curve.
+ * from 7 bonds with tenors {2y, 3y, 5y, 7y, 10y, 20y, 30y}, and uses the yield quote to construct the curve.
  */
 public class ExampleUSBondCurveConfigurationsPopulator {
   /** The bond curve construction configuration name */
@@ -106,7 +106,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
 
   /**
    * Creates an interpolated curve definition containing 3 bills with tenors from 6 months to 18 months
-   * in six month intervals and 29 bonds with tenors from 2 years to 30 years in one year intervals. 
+   * in six month intervals and 7 bonds with tenors {2y, 3y, 5y, 7y, 10y, 20y, 30y}. 
    * The interpolator is double quadratic with linear extrapolation on both sides.
    * @return The curve definition
    */
@@ -115,7 +115,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
     for (int i = 6; i <= 18; i += 6) {
       curveNodes.add(new BillNode(Tenor.ofMonths(i), CURVE_NODE_ID_MAPPER_NAME));
     }
-    for (int i = 2; i <= 30; i++) {
+    for (final int i : new int[] {2, 3, 5, 7, 10, 20, 30 }) {
       curveNodes.add(new BondNode(Tenor.ofYears(i), CURVE_NODE_ID_MAPPER_NAME));
     }
     final CurveDefinition curveDefinition = new InterpolatedCurveDefinition(CURVE_NAME, curveNodes,
@@ -125,7 +125,7 @@ public class ExampleUSBondCurveConfigurationsPopulator {
 
   /**
    * Creates a curve node id mapper containing ISINs for 3 bills with tenors from 6 months to 18 months
-   * in six month intervals and 29 bonds with tenors from 2 years to 30 years in one year intervals.
+   * in six month intervals and 7 bonds with tenors {2y, 3y, 5y, 7y, 10y, 20y, 30y}.
    * @return The curve node id mapper
    */
   private static CurveNodeIdMapper makeCurveNodeIdMapper() {
@@ -143,17 +143,15 @@ public class ExampleUSBondCurveConfigurationsPopulator {
       final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, DataFieldType.OUTRIGHT);
       billNodes.put(tenor, instrumentProvider);
     }
-    for (int i = 0; i < 29; i++) {
-      final int years = i + 2;
-      final int months = years * 12;
-      final Tenor tenor = Tenor.ofYears(years);
+    for (final int i : new int[] {2, 3, 5, 7, 10, 20, 30 }) {
+      final Tenor tenor = Tenor.ofYears(i);
       String suffix;
-      if (years < 10) {
-        suffix = "00" + Integer.toString(years);
-      } else if (years < 100) {
-        suffix = "0" + Integer.toString(years);
+      if (i < 10) {
+        suffix = "00" + Integer.toString(i);
+      } else if (i < 100) {
+        suffix = "0" + Integer.toString(i);
       } else {
-        suffix = Integer.toString(years);
+        suffix = Integer.toString(i);
       }
       final ExternalId isin = ExternalSchemes.syntheticSecurityId("UST000000" + suffix);
       final CurveInstrumentProvider instrumentProvider = new StaticCurveInstrumentProvider(isin, MarketDataRequirementNames.YIELD_YIELD_TO_MATURITY_MID, DataFieldType.OUTRIGHT);
