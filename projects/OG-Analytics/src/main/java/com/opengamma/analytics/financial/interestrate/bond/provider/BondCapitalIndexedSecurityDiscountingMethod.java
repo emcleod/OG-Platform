@@ -16,6 +16,7 @@ import com.opengamma.analytics.financial.interestrate.bond.definition.BondCapita
 import com.opengamma.analytics.financial.interestrate.inflation.derivative.CouponInflationZeroCouponInterpolationGearing;
 import com.opengamma.analytics.financial.interestrate.inflation.derivative.CouponInflationZeroCouponMonthlyGearing;
 import com.opengamma.analytics.financial.interestrate.payments.derivative.Coupon;
+import com.opengamma.analytics.financial.provider.calculator.inflation.IndexRatioInflationCalculator;
 import com.opengamma.analytics.financial.provider.calculator.inflation.NetAmountInflationCalculator;
 import com.opengamma.analytics.financial.provider.calculator.inflation.PresentValueCurveSensitivityDiscountingInflationCalculator;
 import com.opengamma.analytics.financial.provider.calculator.inflation.PresentValueDiscountingInflationCalculator;
@@ -54,6 +55,7 @@ public final class BondCapitalIndexedSecurityDiscountingMethod {
   /**
    * The present value inflation calculator (for the different parts of the bond transaction).
    */
+  private static final IndexRatioInflationCalculator IRIC = IndexRatioInflationCalculator.getInstance();
   private static final PresentValueDiscountingInflationCalculator PVIC = PresentValueDiscountingInflationCalculator.getInstance();
   private static final NetAmountInflationCalculator NAIC = NetAmountInflationCalculator.getInstance();
   private static final PresentValueCurveSensitivityDiscountingInflationCalculator PVCSIC = PresentValueCurveSensitivityDiscountingInflationCalculator.getInstance();

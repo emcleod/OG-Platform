@@ -101,7 +101,6 @@ MANAGER.INCLUDE = classpath:common/common-dbmasters.ini
 * Sub-task
     * [PLAT-6433] - Allow SessionProvider to open multiple service.
 
-
 To 2.2.0-M20
 ------------
 
