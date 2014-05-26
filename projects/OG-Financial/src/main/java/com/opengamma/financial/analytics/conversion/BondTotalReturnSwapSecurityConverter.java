@@ -8,12 +8,13 @@ package com.opengamma.financial.analytics.conversion;
 import java.util.Collections;
 
 import org.threeten.bp.LocalDate;
+import org.threeten.bp.LocalTime;
 import org.threeten.bp.Period;
 import org.threeten.bp.ZoneId;
 import org.threeten.bp.ZonedDateTime;
 
 import com.opengamma.OpenGammaRuntimeException;
-import com.opengamma.analytics.financial.equity.EquityTotalReturnSwapDefinition;
+import com.opengamma.analytics.financial.equity.trs.EquityTotalReturnSwapDefinition;
 import com.opengamma.analytics.financial.instrument.InstrumentDefinition;
 import com.opengamma.analytics.financial.instrument.annuity.AnnuityDefinition;
 import com.opengamma.analytics.financial.instrument.bond.BondFixedSecurityDefinition;
@@ -91,7 +92,7 @@ public class BondTotalReturnSwapSecurityConverter extends FinancialSecurityVisit
     final boolean isPayer = fundingLeg.getPayReceiveType() == PayReceiveType.PAY ? true : false;
     final LocalDate startDate = security.getEffectiveDate();
     final LocalDate endDate = security.getMaturityDate();
-    final NotionalExchange notionalExchange = NotionalExchange.NO_EXCHANGE;
+    final NotionalExchange notionalExchange = NotionalExchange.builder().exchangeFinalNotional(true).build(); //NotionalExchange.NO_EXCHANGE;
     final AnnuityDefinition<? extends PaymentDefinition> annuityDefinition = AnnuityUtils.buildFloatingAnnuityDefinition(_conventionSource, _holidaySource, isPayer,
         startDate, endDate, notionalExchange, fundingLeg);
     final BondSecurity bond = (BondSecurity) underlying;
@@ -127,9 +128,11 @@ public class BondTotalReturnSwapSecurityConverter extends FinancialSecurityVisit
     final double notional = security.getNotionalAmount();
     final int exDividendDays = 0;
     final BondFixedSecurityDefinition bondDefinition = BondFixedSecurityDefinition.from(currency, firstAccrualDate, firstCouponDate,
-        maturityDate, paymentPeriod, rate, settlementDays, notional, exDividendDays, calendar, dayCount, businessDay,
+        maturityDate, paymentPeriod, rate, settlementDays, 1.0d, exDividendDays, calendar, dayCount, businessDay,
         yieldConvention, isEOM, legalEntity);
-    return new BondTotalReturnSwapDefinition(annuityDefinition, bondDefinition);
+    final ZonedDateTime startDateTime = startDate.atTime(LocalTime.MIN).atZone(ZoneId.systemDefault());
+    final ZonedDateTime endDateTime = endDate.atTime(LocalTime.MIN).atZone(ZoneId.systemDefault());
+    return new BondTotalReturnSwapDefinition(startDateTime, endDateTime, annuityDefinition, bondDefinition, notional);
   }
 
   /**

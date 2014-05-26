@@ -9,29 +9,54 @@ import org.threeten.bp.ZonedDateTime;
 
 import com.opengamma.analytics.financial.instrument.InstrumentDefinitionVisitor;
 import com.opengamma.analytics.financial.instrument.annuity.AnnuityDefinition;
-import com.opengamma.analytics.financial.instrument.payment.CouponDefinition;
 import com.opengamma.analytics.financial.instrument.payment.PaymentDefinition;
 import com.opengamma.analytics.financial.instrument.swap.TotalReturnSwapDefinition;
 import com.opengamma.analytics.financial.interestrate.annuity.derivative.Annuity;
-import com.opengamma.analytics.financial.interestrate.bond.definition.BondSecurity;
+import com.opengamma.analytics.financial.interestrate.bond.definition.BondFixedSecurity;
 import com.opengamma.analytics.financial.interestrate.bond.definition.BondTotalReturnSwap;
-import com.opengamma.analytics.financial.interestrate.payments.derivative.Coupon;
 import com.opengamma.analytics.financial.interestrate.payments.derivative.Payment;
+import com.opengamma.analytics.util.time.TimeCalculator;
 import com.opengamma.timeseries.precise.zdt.ZonedDateTimeDoubleTimeSeries;
 import com.opengamma.util.ArgumentChecker;
 
 /**
- *
+ * Description of a total return swap with an underlying fixed coupon bond and a funding leg.
  */
 public class BondTotalReturnSwapDefinition extends TotalReturnSwapDefinition {
 
+  /** The quantity of the bond reference in the TRS. Can be negative or positive. */
+  private final double _quantity;
+
   /**
+   * Constructor of the bond total return swap.
+   * @param effectiveDate The effective date.
+   * @param terminationDate The termination date.
    * @param annuity The funding leg, not null
-   * @param bond The bond, not null
+   * @param bond The fixed coupon bond. Not null.
+   * @param quantity The quantity of the bond reference in the TRS. Can be negative or positive.
    */
-  public BondTotalReturnSwapDefinition(final AnnuityDefinition<? extends PaymentDefinition> annuity,
-      final BondSecurityDefinition<? extends PaymentDefinition, ? extends CouponDefinition> bond) {
-    super(annuity, bond);
+  public BondTotalReturnSwapDefinition(final ZonedDateTime effectiveDate, final ZonedDateTime terminationDate,
+      final AnnuityDefinition<? extends PaymentDefinition> annuity,
+      final BondFixedSecurityDefinition bond, final double quantity) {
+    super(effectiveDate, terminationDate, annuity, bond);
+    _quantity = quantity;
+  }
+
+  /**
+   * Gets the fixed bond underlying the TRS.
+   * @return The bond.
+   */
+  @Override
+  public BondFixedSecurityDefinition getAsset() {
+    return (BondFixedSecurityDefinition) super.getAsset();
+  }
+
+  /**
+   * Returns the bond quantity.
+   * @return The quantity.
+   */
+  public double getQuantity() {
+    return _quantity;
   }
 
   @Override
@@ -53,9 +78,11 @@ public class BondTotalReturnSwapDefinition extends TotalReturnSwapDefinition {
 
   @Override
   public BondTotalReturnSwap toDerivative(final ZonedDateTime date, final ZonedDateTimeDoubleTimeSeries data) {
+    final double effectiveTime = TimeCalculator.getTimeBetween(date, getEffectiveDate());
+    final double terminationTime = TimeCalculator.getTimeBetween(date, getTerminationDate());
     final Annuity<? extends Payment> fundingLeg = getFundingLeg().toDerivative(date, data);
-    final BondSecurity<? extends Payment, ? extends Coupon> bond = (BondSecurity<? extends Payment, ? extends Coupon>) getAsset().toDerivative(date);
-    return new BondTotalReturnSwap(fundingLeg, bond);
+    BondFixedSecurity bond = getAsset().toDerivative(date, getEffectiveDate());
+    return new BondTotalReturnSwap(effectiveTime, terminationTime, fundingLeg, bond, _quantity);
   }
 
   @Override
@@ -65,9 +92,11 @@ public class BondTotalReturnSwapDefinition extends TotalReturnSwapDefinition {
 
   @Override
   public BondTotalReturnSwap toDerivative(final ZonedDateTime date) {
+    final double effectiveTime = TimeCalculator.getTimeBetween(date, getEffectiveDate());
+    final double terminationTime = TimeCalculator.getTimeBetween(date, getTerminationDate());
     final Annuity<? extends Payment> fundingLeg = getFundingLeg().toDerivative(date);
-    final BondSecurity<? extends Payment, ? extends Coupon> bond = (BondSecurity<? extends Payment, ? extends Coupon>) getAsset().toDerivative(date);
-    return new BondTotalReturnSwap(fundingLeg, bond);
+    BondFixedSecurity bond = getAsset().toDerivative(date, getEffectiveDate());
+    return new BondTotalReturnSwap(effectiveTime, terminationTime, fundingLeg, bond, _quantity);
   }
 
 }

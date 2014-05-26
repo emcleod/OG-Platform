@@ -3,10 +3,11 @@
  *
  * Please see distribution for license.
  */
-package com.opengamma.analytics.financial.equity;
+package com.opengamma.analytics.financial.equity.trs;
 
 import org.apache.commons.lang.ObjectUtils;
 
+import com.opengamma.analytics.financial.equity.Equity;
 import com.opengamma.analytics.financial.interestrate.InstrumentDerivativeVisitor;
 import com.opengamma.analytics.financial.interestrate.annuity.derivative.Annuity;
 import com.opengamma.analytics.financial.interestrate.payments.derivative.Payment;
@@ -15,7 +16,7 @@ import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.money.Currency;
 
 /**
- *
+ * Description of an equity total return swap.
  */
 public class EquityTotalReturnSwap extends TotalReturnSwap {
   /** The asset */
@@ -24,25 +25,28 @@ public class EquityTotalReturnSwap extends TotalReturnSwap {
   private final double _notionalAmount;
   /** The notional currency */
   private final Currency _notionalCurrency;
-  /** The dividend percentage */
-  private final double _dividendPercentage;
+  /** The dividend paid by the asset leg payer as a ratio of the original dividend. ratio >= 0 and <= 1. */
+  private final double _dividendRatio;
 
   /**
+   * @param effectiveTime The time to the effective date.
+   * @param terminatioTime The time to the termination date.
    * @param fundingLeg The funding leg, not null
    * @param equity The equity, not null
    * @param notionalAmount The notional amount
    * @param notionalCurrency The notional currency, not null
-   * @param dividendPercentage The dividend percentage received, >= 0 and <= 1
+   * @param dividendRatio The dividend paid by the asset leg payer as a ratio of the original dividend. ratio >= 0 and <= 1.
    */
-  public EquityTotalReturnSwap(final Annuity<? extends Payment> fundingLeg, final Equity equity,
-      final double notionalAmount, final Currency notionalCurrency, final double dividendPercentage) {
-    super(fundingLeg);
+  public EquityTotalReturnSwap(final double effectiveTime, final double terminatioTime,
+      final Annuity<? extends Payment> fundingLeg, final Equity equity,
+      final double notionalAmount, final Currency notionalCurrency, final double dividendRatio) {
+    super(effectiveTime, terminatioTime, fundingLeg);
     ArgumentChecker.notNull(equity, "equity");
     ArgumentChecker.notNull(notionalCurrency, "notionalCurrency");
-    ArgumentChecker.isTrue(ArgumentChecker.isInRangeInclusive(0, 1, dividendPercentage), "Dividend percentage must be >= 0 and <= 1 "
-        + "have {}", dividendPercentage);
+    ArgumentChecker.isTrue(ArgumentChecker.isInRangeInclusive(0, 1, dividendRatio), "Dividend ratio must be >= 0 and <= 1 "
+        + "have {}", dividendRatio);
     _equity = equity;
-    _dividendPercentage = dividendPercentage;
+    _dividendRatio = dividendRatio;
     _notionalAmount = notionalAmount;
     _notionalCurrency = notionalCurrency;
   }
@@ -55,12 +59,13 @@ public class EquityTotalReturnSwap extends TotalReturnSwap {
   public Equity getEquity() {
     return _equity;
   }
+
   /**
    * Gets the dividend percentage.
    * @return The dividend percentage
    */
   public double getDividendPercentage() {
-    return _dividendPercentage;
+    return _dividendRatio;
   }
 
   /**
@@ -96,7 +101,7 @@ public class EquityTotalReturnSwap extends TotalReturnSwap {
     final int prime = 31;
     int result = super.hashCode();
     long temp;
-    temp = Double.doubleToLongBits(_dividendPercentage);
+    temp = Double.doubleToLongBits(_dividendRatio);
     result = prime * result + (int) (temp ^ (temp >>> 32));
     temp = Double.doubleToLongBits(_notionalAmount);
     result = prime * result + (int) (temp ^ (temp >>> 32));
@@ -126,7 +131,7 @@ public class EquityTotalReturnSwap extends TotalReturnSwap {
     if (!ObjectUtils.equals(_notionalCurrency, other._notionalCurrency)) {
       return false;
     }
-    if (Double.compare(_dividendPercentage, other._dividendPercentage) != 0) {
+    if (Double.compare(_dividendRatio, other._dividendRatio) != 0) {
       return false;
     }
     return true;
