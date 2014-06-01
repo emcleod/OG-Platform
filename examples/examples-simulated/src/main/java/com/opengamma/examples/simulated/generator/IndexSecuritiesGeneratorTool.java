@@ -29,7 +29,17 @@ public class IndexSecuritiesGeneratorTool extends AbstractSecuritiesGeneratorToo
   static {
     final String[] currencies = new String[] {"USD", "EUR", "JPY", "CHF", "GBP" };
     final String[] overnightTickers = new String[] {"USDFF", "EONIA", "TONAR", "TOISTOIS", "SONIO" };
-    Tenor[] tenors = new Tenor[] {Tenor.ONE_MONTH, Tenor.THREE_MONTHS, Tenor.SIX_MONTHS };
+    Tenor[] tenors = new Tenor[] {Tenor.ONE_MONTH, Tenor.TWO_MONTHS, Tenor.THREE_MONTHS, Tenor.FOUR_MONTHS, Tenor.FIVE_MONTHS, Tenor.SIX_MONTHS };
+    for (final Tenor tenor : tenors) {
+      final String iborTicker = "EUREURIBOR" + tenor.toFormattedString();
+      final String referenceRateTicker = " EURIBOR " + tenor.toFormattedString().substring(1).toLowerCase();
+      final ExternalId iborIndexId = ExternalSchemes.syntheticSecurityId(iborTicker);
+      final ExternalId iborIndexReferenceRateId = ExternalId.of(InMemoryConventionBundleMaster.SIMPLE_NAME_SCHEME, referenceRateTicker);
+      final IborIndex iborIndex = new IborIndex(iborTicker, tenor, iborIndexId);
+      iborIndex.setExternalIdBundle(ExternalIdBundle.of(iborIndexId, iborIndexReferenceRateId));
+      iborIndex.setName(iborTicker);
+      INDICES.add(iborIndex);
+    }
     for (int i = 0; i < currencies.length; i++) {
       final String currency = currencies[i];
       final String overnightTicker = overnightTickers[i];
