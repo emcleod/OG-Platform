@@ -10,14 +10,14 @@ import com.opengamma.util.ArgumentChecker;
 import com.opengamma.util.result.Function2;
 
 /**
- * @author emcleod
- *
  * A renaming function for {@link CurveSpecificationBuilderConfiguration} where the currency
  * string is fixed upon construction. If {@link #_name} is null, the new name is 
  * "[original name] [ISO currency string]. If {@link #_name} is not null, the new name is 
  * "[original name] [_name] [ISO currency string]".
+ *
+ * @author emcleod
  */
-public class FixedCurrencyCSBCRenamingFunction implements Function2<String, String, String> {
+public class FixedCurrencyCsbcRenamingFunction implements Function2<String, String, String> {
   /** The currency */
   private final String _currency;
   /** A string containing additional information */
@@ -27,7 +27,7 @@ public class FixedCurrencyCSBCRenamingFunction implements Function2<String, Stri
    * Sets the additional string to null
    * @param currency The currency string, not null
    */
-  public FixedCurrencyCSBCRenamingFunction(final String currency) {
+  public FixedCurrencyCsbcRenamingFunction(final String currency) {
     this(currency, null);
   }
 
@@ -35,7 +35,7 @@ public class FixedCurrencyCSBCRenamingFunction implements Function2<String, Stri
    * @param currency The currency string, not null
    * @param name The additional string, can be null
    */
-  public FixedCurrencyCSBCRenamingFunction(final String currency, final String name) {
+  public FixedCurrencyCsbcRenamingFunction(final String currency, final String name) {
     ArgumentChecker.notNull(currency, "currency");
     _currency = currency;
     _name = name;
@@ -50,7 +50,7 @@ public class FixedCurrencyCSBCRenamingFunction implements Function2<String, Stri
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((_currency == null) ? 0 : _currency.hashCode());
+    result = prime * result + _currency.hashCode();
     result = prime * result + ((_name == null) ? 0 : _name.hashCode());
     return result;
   }
@@ -60,10 +60,10 @@ public class FixedCurrencyCSBCRenamingFunction implements Function2<String, Stri
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof FixedCurrencyCSBCRenamingFunction)) {
+    if (!(obj instanceof FixedCurrencyCsbcRenamingFunction)) {
       return false;
     }
-    final FixedCurrencyCSBCRenamingFunction other = (FixedCurrencyCSBCRenamingFunction) obj;
+    final FixedCurrencyCsbcRenamingFunction other = (FixedCurrencyCsbcRenamingFunction) obj;
     if (!ObjectUtils.equals(_name, other._name)) {
       return false;
     }

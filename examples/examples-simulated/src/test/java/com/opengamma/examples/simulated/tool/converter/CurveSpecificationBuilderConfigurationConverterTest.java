@@ -16,13 +16,13 @@ import org.testng.annotations.Test;
 import org.threeten.bp.Period;
 
 import com.google.common.collect.Iterables;
-import com.opengamma.examples.simulated.tool.converter.CurveSpecificationBuilderConfigurationConverter.BasisSwapTypeStripConverter;
-import com.opengamma.examples.simulated.tool.converter.CurveSpecificationBuilderConfigurationConverter.CashTypeStripConverter;
-import com.opengamma.examples.simulated.tool.converter.CurveSpecificationBuilderConfigurationConverter.FraTypeStripConverter;
 import com.opengamma.examples.simulated.tool.converter.CurveSpecificationBuilderConfigurationConverter.ReflectionStripConverter;
-import com.opengamma.examples.simulated.tool.converter.CurveSpecificationBuilderConfigurationConverter.SwapTypeStripConverter;
-import com.opengamma.examples.simulated.tool.converter.csbc.DefaultCSBCRenamingFunction;
-import com.opengamma.examples.simulated.tool.converter.csbc.InstrumentProviderConverter;
+import com.opengamma.examples.simulated.tool.converter.csbc.BasisSwapInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.CashInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.DefaultCsbcRenamingFunction;
+import com.opengamma.examples.simulated.tool.converter.csbc.FraInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.InstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.SwapInstrumentProviderPopulator;
 import com.opengamma.financial.analytics.curve.CurveNodeIdMapper;
 import com.opengamma.financial.analytics.ircurve.CurveInstrumentProvider;
 import com.opengamma.financial.analytics.ircurve.CurveSpecificationBuilderConfiguration;
@@ -103,8 +103,8 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
 
   @Test(expectedExceptions = RuntimeException.class)
   public void testWrongSourceMethodNameForConverter() {
-    final Map<StripInstrumentType, InstrumentProviderConverter> converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.CASH, new ReflectionStripConverter(StripInstrumentType.CASH, "getDepositInstrumentProviders", "cashNodeIds", new DefaultCSBCRenamingFunction()));
+    final Map<StripInstrumentType, InstrumentProviderPopulator> converters = new EnumMap<>(StripInstrumentType.class);
+    converters.put(StripInstrumentType.CASH, new ReflectionStripConverter(StripInstrumentType.CASH, "getDepositInstrumentProviders", "cashNodeIds", new DefaultCsbcRenamingFunction()));
     final String name = "DEFAULT";
     final CurveSpecificationBuilderConfiguration originalConfig = new CurveSpecificationBuilderConfiguration(DEPOSITS, null, null, null, null, null, null, null,
         null, null, null, null, null, null, null, null, null, null, null);
@@ -113,8 +113,8 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
 
   @Test(expectedExceptions = RuntimeException.class)
   public void testWrongDestinationMethodNameForConverter() {
-    final Map<StripInstrumentType, InstrumentProviderConverter> converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.CASH, new ReflectionStripConverter(StripInstrumentType.CASH, "getCashInstrumentProviders", "depositNodeIds", new DefaultCSBCRenamingFunction()));
+    final Map<StripInstrumentType, InstrumentProviderPopulator> converters = new EnumMap<>(StripInstrumentType.class);
+    converters.put(StripInstrumentType.CASH, new ReflectionStripConverter(StripInstrumentType.CASH, "getCashInstrumentProviders", "depositNodeIds", new DefaultCsbcRenamingFunction()));
     final String name = "DEFAULT";
     final CurveSpecificationBuilderConfiguration originalConfig = new CurveSpecificationBuilderConfiguration(DEPOSITS, null, null, null, null, null, null, null,
         null, null, null, null, null, null, null, null, null, null, null);
@@ -123,9 +123,9 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
 
   @Test
   public void testOverwritingCashNodes() {
-    final Map<StripInstrumentType, InstrumentProviderConverter> converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.CASH, new CashTypeStripConverter(StripInstrumentType.CASH, "getCashInstrumentProviders"));
-    converters.put(StripInstrumentType.CASH, new CashTypeStripConverter(StripInstrumentType.CASH, "getLiborInstrumentProviders"));
+    final Map<StripInstrumentType, InstrumentProviderPopulator> converters = new EnumMap<>(StripInstrumentType.class);
+    converters.put(StripInstrumentType.CASH, new CashInstrumentProviderPopulator(StripInstrumentType.CASH, "getCashInstrumentProviders"));
+    converters.put(StripInstrumentType.CASH, new CashInstrumentProviderPopulator(StripInstrumentType.CASH, "getLiborInstrumentProviders"));
     final String name = "DEFAULT";
     final CurveSpecificationBuilderConfiguration originalConfig = new CurveSpecificationBuilderConfiguration(DEPOSITS, null, null, LIBORS, null, null, null, null,
         null, null, null, null, null, null, null, null, null, null, null);
@@ -141,9 +141,9 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
 
   @Test
   public void testOverwritingFraNodes() {
-    final Map<StripInstrumentType, InstrumentProviderConverter> converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.FRA_3M, new FraTypeStripConverter(StripInstrumentType.FRA_3M, "getFra3MInstrumentProviders"));
-    converters.put(StripInstrumentType.FRA_6M, new FraTypeStripConverter(StripInstrumentType.FRA_6M, "getFra6MInstrumentProviders"));
+    final Map<StripInstrumentType, InstrumentProviderPopulator> converters = new EnumMap<>(StripInstrumentType.class);
+    converters.put(StripInstrumentType.FRA_3M, new FraInstrumentProviderPopulator(StripInstrumentType.FRA_3M, "getFra3MInstrumentProviders"));
+    converters.put(StripInstrumentType.FRA_6M, new FraInstrumentProviderPopulator(StripInstrumentType.FRA_6M, "getFra6MInstrumentProviders"));
     final String name = "DEFAULT";
     final CurveSpecificationBuilderConfiguration originalConfig = new CurveSpecificationBuilderConfiguration(null, FRA_3MS, FRA_6MS, null, null, null, null, null,
         null, null, null, null, null, null, null, null, null, null, null);
@@ -161,9 +161,9 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
   public void testOverwritingSwapNodes() {
     final String name = "DEFAULT";
     final String expectedName = "DEFAULT USD";
-    Map<StripInstrumentType, InstrumentProviderConverter> converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.SWAP_28D, new SwapTypeStripConverter(StripInstrumentType.SWAP_28D, "getSwap28DInstrumentProviders"));
-    converters.put(StripInstrumentType.SWAP_12M, new SwapTypeStripConverter(StripInstrumentType.SWAP_12M, "getSwap12MInstrumentProviders"));
+    Map<StripInstrumentType, InstrumentProviderPopulator> converters = new EnumMap<>(StripInstrumentType.class);
+    converters.put(StripInstrumentType.SWAP_28D, new SwapInstrumentProviderPopulator(StripInstrumentType.SWAP_28D, "getSwap28DInstrumentProviders"));
+    converters.put(StripInstrumentType.SWAP_12M, new SwapInstrumentProviderPopulator(StripInstrumentType.SWAP_12M, "getSwap12MInstrumentProviders"));
     CurveSpecificationBuilderConfiguration originalConfig = new CurveSpecificationBuilderConfiguration(null, null, null, null, null, null, null, null,
         null, null, null, null, null, null, null, null, null, SWAP_12MS, SWAP_28DS);
     Collection<CurveNodeIdMapper> newConfigs = CurveSpecificationBuilderConfigurationConverter.convert("USD", Collections.singletonMap(name, originalConfig), converters);
@@ -174,8 +174,8 @@ public class CurveSpecificationBuilderConfigurationConverterTest {
     assertEquals(1, newConfigs.size());
     assertEquals(expectedConfig, Iterables.getOnlyElement(newConfigs));
     converters = new EnumMap<>(StripInstrumentType.class);
-    converters.put(StripInstrumentType.BASIS_SWAP, new BasisSwapTypeStripConverter(StripInstrumentType.BASIS_SWAP));
-    converters.put(StripInstrumentType.TENOR_SWAP, new BasisSwapTypeStripConverter(StripInstrumentType.TENOR_SWAP));
+    converters.put(StripInstrumentType.BASIS_SWAP, new BasisSwapInstrumentProviderPopulator(StripInstrumentType.BASIS_SWAP));
+    converters.put(StripInstrumentType.TENOR_SWAP, new BasisSwapInstrumentProviderPopulator(StripInstrumentType.TENOR_SWAP));
     originalConfig = new CurveSpecificationBuilderConfiguration(null, null, null, null, null, null, null, null,
         null, null, null, BASIS_SWAPS, TENOR_SWAPS, null, null, null, null, null, null);
     newConfigs = CurveSpecificationBuilderConfigurationConverter.convert("USD", Collections.singletonMap(name, originalConfig), converters);

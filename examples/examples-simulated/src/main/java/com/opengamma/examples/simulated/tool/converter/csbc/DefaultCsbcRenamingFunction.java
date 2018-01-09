@@ -9,27 +9,28 @@ import com.opengamma.financial.analytics.ircurve.CurveSpecificationBuilderConfig
 import com.opengamma.util.result.Function2;
 
 /**
- *  @author emcleod
  *
  * The default renaming function for {@link CurveSpecificationBuilderConfiguration}. If
  * {@link #_name} is null, the new name is "[original name] [ISO currency string]. 
  * If {@link #_name} is not null, the new name is "[original name] [_name] [ISO currency string]".
+ * 
+ * @author emcleod
  */
-public class DefaultCSBCRenamingFunction implements Function2<String, String, String> {
+public class DefaultCsbcRenamingFunction implements Function2<String, String, String> {
   /** A string containing additional information */
   private final String _name;
 
   /**
    * Sets the additional string to null
    */
-  public DefaultCSBCRenamingFunction() {
+  public DefaultCsbcRenamingFunction() {
     this(null);
   }
 
   /**
    * @param name The additional string, can be null
    */
-  public DefaultCSBCRenamingFunction(final String name) {
+  public DefaultCsbcRenamingFunction(final String name) {
     _name = name;
   }
 
@@ -51,10 +52,10 @@ public class DefaultCSBCRenamingFunction implements Function2<String, String, St
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof DefaultCSBCRenamingFunction)) {
+    if (!(obj instanceof DefaultCsbcRenamingFunction)) {
       return false;
     }
-    final DefaultCSBCRenamingFunction other = (DefaultCSBCRenamingFunction) obj;
+    final DefaultCsbcRenamingFunction other = (DefaultCsbcRenamingFunction) obj;
     if (!ObjectUtils.equals(_name, other._name)) {
       return false;
     }

@@ -8,7 +8,7 @@ import static org.testng.AssertJUnit.assertFalse;
 
 import org.testng.annotations.Test;
 
-import com.opengamma.examples.simulated.tool.converter.csbc.FixedCurrencyCSBCRenamingFunction;
+import com.opengamma.examples.simulated.tool.converter.csbc.FixedCurrencyCsbcRenamingFunction;
 import com.opengamma.financial.analytics.ircurve.CurveSpecificationBuilderConfiguration;
 import com.opengamma.util.result.Function2;
 import com.opengamma.util.test.TestGroup;
@@ -18,7 +18,7 @@ import com.opengamma.util.test.TestGroup;
  * the currency is fixed.
  */
 @Test(groups = TestGroup.UNIT)
-public class DefaultCSBSRenamingFunctionTest {
+public class DefaultCsbcRenamingFunctionTest {
   /** The curve specification builder configuration name */
   private static final String NAME = "DEFAULT";
   /** The currency string */
@@ -29,12 +29,12 @@ public class DefaultCSBSRenamingFunctionTest {
    */
   @Test
   public static void testWithoutExtraInformation() {
-    final Function2<String, String, String> f = new FixedCurrencyCSBCRenamingFunction(CCY);
+    final Function2<String, String, String> f = new FixedCurrencyCsbcRenamingFunction(CCY);
     assertEquals(NAME + " " + CCY, f.apply(NAME, CCY));
-    Function2<String, String, String> other = new FixedCurrencyCSBCRenamingFunction(CCY);
+    Function2<String, String, String> other = new FixedCurrencyCsbcRenamingFunction(CCY);
     assertEquals(f, other);
     assertEquals(f.hashCode(), other.hashCode());
-    other = new FixedCurrencyCSBCRenamingFunction(CCY + "1");
+    other = new FixedCurrencyCsbcRenamingFunction(CCY + "1");
     assertFalse(f.equals(other));
   }
 
@@ -44,14 +44,14 @@ public class DefaultCSBSRenamingFunctionTest {
   @Test
   public static void testWithExtraInformation() {
     final String s = "DEF";
-    final Function2<String, String, String> f = new FixedCurrencyCSBCRenamingFunction(CCY, s);
+    final Function2<String, String, String> f = new FixedCurrencyCsbcRenamingFunction(CCY, s);
     assertEquals(NAME + " " + s + " " + CCY, f.apply(NAME, CCY));
-    Function2<String, String, String> other = new FixedCurrencyCSBCRenamingFunction(CCY, s);
+    Function2<String, String, String> other = new FixedCurrencyCsbcRenamingFunction(CCY, s);
     assertEquals(f, other);
     assertEquals(f.hashCode(), other.hashCode());
-    other = new FixedCurrencyCSBCRenamingFunction(CCY, s + "1");
+    other = new FixedCurrencyCsbcRenamingFunction(CCY, s + "1");
     assertFalse(f.equals(other));
-    other = new FixedCurrencyCSBCRenamingFunction(CCY + "1", s);
+    other = new FixedCurrencyCsbcRenamingFunction(CCY + "1", s);
     assertFalse(f.equals(other));
   }
 }

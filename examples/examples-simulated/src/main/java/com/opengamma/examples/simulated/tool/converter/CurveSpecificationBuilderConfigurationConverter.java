@@ -30,7 +30,6 @@ import static com.opengamma.financial.analytics.ircurve.StripInstrumentType.TENO
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,11 +39,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.opengamma.examples.simulated.tool.converter.csbc.DefaultCSBCRenamingFunction;
-import com.opengamma.examples.simulated.tool.converter.csbc.FixedCurrencyCSBCRenamingFunction;
-import com.opengamma.examples.simulated.tool.converter.csbc.FutureInstrumentProviderConverter;
-import com.opengamma.examples.simulated.tool.converter.csbc.InstrumentProviderConverter;
-import com.opengamma.examples.simulated.tool.converter.csbc.NoOpInstrumentProviderConverter;
+import com.opengamma.examples.simulated.tool.converter.csbc.BasisSwapInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.CashInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.ContinuouslyCompoundedRateInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.DefaultCsbcRenamingFunction;
+import com.opengamma.examples.simulated.tool.converter.csbc.FixedCurrencyCsbcRenamingFunction;
+import com.opengamma.examples.simulated.tool.converter.csbc.FraInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.FutureInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.InstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.NoOpInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.PeriodicZeroDepositInstrumentProviderPopulator;
+import com.opengamma.examples.simulated.tool.converter.csbc.SwapInstrumentProviderPopulator;
 import com.opengamma.financial.analytics.curve.CurveNodeIdMapper;
 import com.opengamma.financial.analytics.curve.CurveNodeIdMapper.Builder;
 import com.opengamma.financial.analytics.ircurve.CurveInstrumentProvider;
@@ -54,34 +59,37 @@ import com.opengamma.util.result.Function2;
 import com.opengamma.util.time.Tenor;
 import com.opengamma.util.tuple.Pair;
 
+/**
+ * Converts a {@link CurveSpecificationBuilderConfiguration} into {@link CurveNodeIdMapper}.
+ */
 public class CurveSpecificationBuilderConfigurationConverter {
   private static final Logger s_logger = LoggerFactory.getLogger(CurveSpecificationBuilderConfigurationConverter.class);
-  private static final Map<StripInstrumentType, InstrumentProviderConverter> CONVERTERS = new EnumMap<>(StripInstrumentType.class);
+  private static final Map<StripInstrumentType, InstrumentProviderPopulator> CONVERTERS = new EnumMap<>(StripInstrumentType.class);
 
   static {
-    CONVERTERS.put(BANKERS_ACCEPTANCE, new NoOpInstrumentProviderConverter(BANKERS_ACCEPTANCE));
-    CONVERTERS.put(BASIS_SWAP, new BasisSwapTypeStripConverter(BASIS_SWAP));
-    CONVERTERS.put(CASH, new ReflectionStripConverter(CASH, "getCashInstrumentProviders", "cashNodeIds", new DefaultCSBCRenamingFunction()));
-    CONVERTERS.put(CDOR, new CashTypeStripConverter(CDOR, "getCDORInstrumentProviders", new FixedCurrencyCSBCRenamingFunction("CAD", "CDOR")));
-    CONVERTERS.put(CIBOR, new CashTypeStripConverter(CIBOR, "getCiborInstrumentProviders", new FixedCurrencyCSBCRenamingFunction("DKK", "Cibor")));
-    CONVERTERS.put(CONTINUOUS_ZERO_DEPOSIT, new ContinuouslyCompoundedZeroDepositStripConverter());
-    CONVERTERS.put(EURIBOR, new CashTypeStripConverter(EURIBOR, "getEuriborInstrumentProviders", new FixedCurrencyCSBCRenamingFunction("EUR", "Euribor")));
-    CONVERTERS.put(FRA, new NoOpInstrumentProviderConverter(FRA));
-    CONVERTERS.put(FRA_3M, new FraTypeStripConverter(FRA_3M, "getFra3MInstrumentProviders", new DefaultCSBCRenamingFunction("3m")));
-    CONVERTERS.put(FRA_6M, new FraTypeStripConverter(FRA_6M, "getFra6MInstrumentProviders", new DefaultCSBCRenamingFunction("6m")));
-    CONVERTERS.put(FUTURE, new FutureInstrumentProviderConverter());
-    CONVERTERS.put(LIBOR, new CashTypeStripConverter(LIBOR, "getLiborInstrumentProviders", new DefaultCSBCRenamingFunction("Libor")));
-    CONVERTERS.put(OIS_SWAP, new SwapTypeStripConverter(OIS_SWAP, "getOISSwapInstrumentProviders"));
-    CONVERTERS.put(PERIODIC_ZERO_DEPOSIT, new PeriodicZeroDepositStripConverter());
-    CONVERTERS.put(SIMPLE_ZERO_DEPOSIT, new NoOpInstrumentProviderConverter(SIMPLE_ZERO_DEPOSIT));
-    CONVERTERS.put(SPREAD, new NoOpInstrumentProviderConverter(SPREAD));
-    CONVERTERS.put(STIBOR, new CashTypeStripConverter(STIBOR, "getStiborInstrumentProviders", new FixedCurrencyCSBCRenamingFunction("SEK", "Stibor")));
-    CONVERTERS.put(SWAP, new NoOpInstrumentProviderConverter(SWAP));
-    CONVERTERS.put(SWAP_28D, new SwapTypeStripConverter(SWAP_28D, "getSwap28DInstrumentProviders", new DefaultCSBCRenamingFunction("28d")));
-    CONVERTERS.put(SWAP_3M, new SwapTypeStripConverter(SWAP_3M, "getSwap3MInstrumentProviders", new DefaultCSBCRenamingFunction("3m")));
-    CONVERTERS.put(SWAP_6M, new SwapTypeStripConverter(SWAP_6M, "getSwap6MInstrumentProviders", new DefaultCSBCRenamingFunction("6m")));
-    CONVERTERS.put(SWAP_12M, new SwapTypeStripConverter(SWAP_12M, "getSwap12MInstrumentProviders", new DefaultCSBCRenamingFunction("12m")));
-    CONVERTERS.put(TENOR_SWAP, new BasisSwapTypeStripConverter(TENOR_SWAP));
+    CONVERTERS.put(BANKERS_ACCEPTANCE, new NoOpInstrumentProviderPopulator(BANKERS_ACCEPTANCE));
+    CONVERTERS.put(BASIS_SWAP, new BasisSwapInstrumentProviderPopulator(BASIS_SWAP));
+    CONVERTERS.put(CASH, new ReflectionStripConverter(CASH, "getCashInstrumentProviders", "cashNodeIds", new DefaultCsbcRenamingFunction()));
+    CONVERTERS.put(CDOR, new CashInstrumentProviderPopulator(CDOR, "getCDORInstrumentProviders", new FixedCurrencyCsbcRenamingFunction("CAD", "CDOR")));
+    CONVERTERS.put(CIBOR, new CashInstrumentProviderPopulator(CIBOR, "getCiborInstrumentProviders", new FixedCurrencyCsbcRenamingFunction("DKK", "Cibor")));
+    CONVERTERS.put(CONTINUOUS_ZERO_DEPOSIT, new ContinuouslyCompoundedRateInstrumentProviderPopulator());
+    CONVERTERS.put(EURIBOR, new CashInstrumentProviderPopulator(EURIBOR, "getEuriborInstrumentProviders", new FixedCurrencyCsbcRenamingFunction("EUR", "Euribor")));
+    CONVERTERS.put(FRA, new NoOpInstrumentProviderPopulator(FRA));
+    CONVERTERS.put(FRA_3M, new FraInstrumentProviderPopulator(FRA_3M, "getFra3MInstrumentProviders", new DefaultCsbcRenamingFunction("3m")));
+    CONVERTERS.put(FRA_6M, new FraInstrumentProviderPopulator(FRA_6M, "getFra6MInstrumentProviders", new DefaultCsbcRenamingFunction("6m")));
+    CONVERTERS.put(FUTURE, new FutureInstrumentProviderPopulator());
+    CONVERTERS.put(LIBOR, new CashInstrumentProviderPopulator(LIBOR, "getLiborInstrumentProviders", new DefaultCsbcRenamingFunction("Libor")));
+    CONVERTERS.put(OIS_SWAP, new SwapInstrumentProviderPopulator(OIS_SWAP, "getOISSwapInstrumentProviders"));
+    CONVERTERS.put(PERIODIC_ZERO_DEPOSIT, new PeriodicZeroDepositInstrumentProviderPopulator());
+    CONVERTERS.put(SIMPLE_ZERO_DEPOSIT, new NoOpInstrumentProviderPopulator(SIMPLE_ZERO_DEPOSIT));
+    CONVERTERS.put(SPREAD, new NoOpInstrumentProviderPopulator(SPREAD));
+    CONVERTERS.put(STIBOR, new CashInstrumentProviderPopulator(STIBOR, "getStiborInstrumentProviders", new FixedCurrencyCsbcRenamingFunction("SEK", "Stibor")));
+    CONVERTERS.put(SWAP, new NoOpInstrumentProviderPopulator(SWAP));
+    CONVERTERS.put(SWAP_28D, new SwapInstrumentProviderPopulator(SWAP_28D, "getSwap28DInstrumentProviders", new DefaultCsbcRenamingFunction("28d")));
+    CONVERTERS.put(SWAP_3M, new SwapInstrumentProviderPopulator(SWAP_3M, "getSwap3MInstrumentProviders", new DefaultCsbcRenamingFunction("3m")));
+    CONVERTERS.put(SWAP_6M, new SwapInstrumentProviderPopulator(SWAP_6M, "getSwap6MInstrumentProviders", new DefaultCsbcRenamingFunction("6m")));
+    CONVERTERS.put(SWAP_12M, new SwapInstrumentProviderPopulator(SWAP_12M, "getSwap12MInstrumentProviders", new DefaultCsbcRenamingFunction("12m")));
+    CONVERTERS.put(TENOR_SWAP, new BasisSwapInstrumentProviderPopulator(TENOR_SWAP));
   }
 
   public static Collection<CurveNodeIdMapper> convert(final String currency, final Map<String, CurveSpecificationBuilderConfiguration> configMap) {
@@ -89,20 +97,19 @@ public class CurveSpecificationBuilderConfigurationConverter {
   }
 
   public static Collection<CurveNodeIdMapper> convert(final String currency, final Map<String, CurveSpecificationBuilderConfiguration> configMap,
-      final Map<StripInstrumentType, InstrumentProviderConverter> converters) {
+      final Map<StripInstrumentType, InstrumentProviderPopulator> converters) {
     final Map<String, CurveNodeIdMapper.Builder> convertedWithNames = new HashMap<>();
     for (final Map.Entry<String, CurveSpecificationBuilderConfiguration> convertedEntry : configMap.entrySet()) {
       final String originalName = convertedEntry.getKey();
       final CurveSpecificationBuilderConfiguration originalConfig = convertedEntry.getValue();
-      for (final Map.Entry<StripInstrumentType, InstrumentProviderConverter> entry : converters.entrySet()) {
-        final InstrumentProviderConverter converter = entry.getValue();
-        final String newName = converter.rename(originalName, currency);
-        final Builder remappedNameBuilder = convertedWithNames.get(newName);
+      for (final Map.Entry<StripInstrumentType, InstrumentProviderPopulator> entry : converters.entrySet()) {
+        final InstrumentProviderPopulator converter = entry.getValue();
+        final Builder remappedNameBuilder = convertedWithNames.get(originalName);
         final Pair<String, CurveNodeIdMapper.Builder> pair;
         if (remappedNameBuilder != null) {
-          pair = converter.apply(remappedNameBuilder.build(), originalConfig);
+          pair = converter.apply(remappedNameBuilder.build(), originalConfig, currency);
         } else {
-          pair = converter.apply(CurveNodeIdMapper.builder().name(newName).build(), originalConfig);
+          pair = converter.apply(CurveNodeIdMapper.builder().name(originalName).build(), originalConfig, currency);
         }
         convertedWithNames.put(pair.getFirst(), pair.getSecond());
       }
@@ -117,7 +124,7 @@ public class CurveSpecificationBuilderConfigurationConverter {
     return converted;
   }
 
-  public static class ReflectionStripConverter extends InstrumentProviderConverter {
+  public static class ReflectionStripConverter extends InstrumentProviderPopulator {
     private final StripInstrumentType _type;
     private final String _builderMethodName;
     private final String _builderGetterName;
@@ -142,13 +149,14 @@ public class CurveSpecificationBuilderConfigurationConverter {
     }
 
     @Override
-    public Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
+    public Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders,
+        final String currency) {
       try {
         final Method getMethod = CurveNodeIdMapper.class.getMethod(_builderGetterName, (Class<?>[]) null);
         if (getMethod.invoke(idMapper, (Object[]) null) != null) {
           s_logger.warn("Nodes already exist in mapper called {}; overwriting with {}", _type);
         }
-        final Builder newBuilder = copyToBuilder(idMapper);
+        final Builder newBuilder = copyToBuilder(idMapper, currency);
         final Method builderMethod = Builder.class.getMethod(_builderMethodName, Map.class);
         return (Builder) builderMethod.invoke(newBuilder, instrumentProviders);
       } catch (final NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
@@ -158,144 +166,4 @@ public class CurveSpecificationBuilderConfigurationConverter {
 
   }
 
-  public static class CashTypeStripConverter extends InstrumentProviderConverter {
-    private final StripInstrumentType _type;
-
-    public CashTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName) {
-      this(type, instrumentProviderName, new DefaultCSBCRenamingFunction());
-    }
-
-    public CashTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName,
-        final Function2<String, String, String> renamingFunction) {
-      super(instrumentProviderName, renamingFunction);
-      _type = type;
-    }
-
-    @Override
-    public Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getCashNodeIds() != null) {
-        s_logger.warn("Cash nodes already exist in mapper called {}: overwriting with {}", idMapper.getName(), _type);
-      }
-      return copyToBuilder(idMapper).cashNodeIds(instrumentProviders);
-    }
-
-  }
-
-  public static class SwapTypeStripConverter extends InstrumentProviderConverter {
-    private final StripInstrumentType _type;
-
-    public SwapTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName) {
-      this(type, instrumentProviderName, new DefaultCSBCRenamingFunction());
-    }
-
-    public SwapTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName,
-        final Function2<String, String, String> renamingFunction) {
-      super(instrumentProviderName, renamingFunction);
-      _type = type;
-    }
-
-    @Override
-    public Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getSwapNodeIds() != null) {
-        s_logger.warn("Swap nodes already exist in mapper called {}: overwriting with {}", idMapper.getName(), _type);
-      }
-      return copyToBuilder(idMapper).swapNodeIds(instrumentProviders);
-    }
-
-  }
-
-  public static class FraTypeStripConverter extends InstrumentProviderConverter {
-    private final StripInstrumentType _type;
-
-    public FraTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName) {
-      this(type, instrumentProviderName, new DefaultCSBCRenamingFunction());
-    }
-
-    public FraTypeStripConverter(final StripInstrumentType type, final String instrumentProviderName, final Function2<String, String, String> renamingFunction) {
-      super(instrumentProviderName, renamingFunction);
-      _type = type;
-    }
-
-    @Override
-    public CurveNodeIdMapper.Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getFRANodeIds() != null) {
-        s_logger.warn("FRA nodes already exist in mapper called {}: overwriting with {}", idMapper.getName(), _type);
-      }
-      return copyToBuilder(idMapper).fraNodeIds(instrumentProviders);
-    }
-
-  }
-
-  public static class BasisSwapTypeStripConverter extends InstrumentProviderConverter {
-    private final StripInstrumentType _type;
-
-    public BasisSwapTypeStripConverter(final StripInstrumentType type) {
-      super(null);
-      _type = type;
-    }
-
-    @Override
-    public CurveNodeIdMapper.Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getSwapNodeIds() != null) {
-        s_logger.warn("Swap node ids already exist in mapper called {}: overwriting with {}", idMapper.getName(), _type);
-      }
-      return copyToBuilder(idMapper).swapNodeIds(instrumentProviders);
-    }
-
-    @Override
-    public Map<Tenor, CurveInstrumentProvider> getInstrumentProviders(final CurveSpecificationBuilderConfiguration identifiers) {
-      switch (_type) {
-        case BASIS_SWAP:
-          return identifiers.getBasisSwapInstrumentProviders();
-        case TENOR_SWAP:
-          return identifiers.getTenorSwapInstrumentProviders();
-        default:
-          s_logger.warn("Could not find instrument provider method for {}", _type);
-          return Collections.emptyMap();
-      }
-    }
-
-  }
-
-  public static class PeriodicZeroDepositStripConverter extends InstrumentProviderConverter {
-
-    public PeriodicZeroDepositStripConverter() {
-      super(null);
-    }
-
-    @Override
-    public CurveNodeIdMapper.Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getPeriodicallyCompoundedRateNodeIds() != null) {
-        s_logger.warn("Periodically compounded rate nodes already exist in mapper called {}: overwriting", idMapper.getName());
-      }
-      return copyToBuilder(idMapper).periodicallyCompoundedRateNodeIds(instrumentProviders);
-    }
-
-    @Override
-    public Map<Tenor, CurveInstrumentProvider> getInstrumentProviders(final CurveSpecificationBuilderConfiguration identifiers) {
-      return identifiers.getPeriodicZeroDepositInstrumentProviders();
-    }
-
-  }
-
-  public static class ContinuouslyCompoundedZeroDepositStripConverter extends InstrumentProviderConverter {
-
-    public ContinuouslyCompoundedZeroDepositStripConverter() {
-      super(null);
-    }
-
-    @Override
-    public CurveNodeIdMapper.Builder createBuilder(final CurveNodeIdMapper idMapper, final Map<Tenor, CurveInstrumentProvider> instrumentProviders) {
-      if (idMapper.getPeriodicallyCompoundedRateNodeIds() != null) {
-        s_logger.warn("Continuously compounded rate nodes already exist in mapper called {}: overwriting", idMapper.getName());
-      }
-      return copyToBuilder(idMapper).continuouslyCompoundedRateNodeIds(instrumentProviders);
-    }
-
-    @Override
-    public Map<Tenor, CurveInstrumentProvider> getInstrumentProviders(final CurveSpecificationBuilderConfiguration identifiers) {
-      return identifiers.getContinuousZeroDepositInstrumentProviders();
-    }
-
-  }
 }
